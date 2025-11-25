@@ -1,0 +1,5 @@
+gnn_ckpt: outputs/gnn/checkpoints/best.pt
+sample_config: configs/psmiles/sample.yaml
+generated_csv: outputs/psmiles/samples.csv
+pipeline_output: outputs/pipeline/predicted.csv
+psmiles_col: PSMILES

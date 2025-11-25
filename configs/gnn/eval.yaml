@@ -1,0 +1,6 @@
+ckpt_path: outputs/gnn/checkpoints/best.pt
+csv_path: models/polyGeoGAT/datasets/Testdataset.csv
+psmiles_col: PSMILES
+save_dir: outputs/gnn/pred_graphs
+out_csv: outputs/gnn/preds.csv
+device: auto

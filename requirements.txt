@@ -1,0 +1,3 @@
+# PolyMolStudio combined dependencies
+-r models/polyGeoGAT/requirements.txt
+-r models/PolySmith/requirements.txt

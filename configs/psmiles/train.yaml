@@ -1,0 +1,12 @@
+# PolySmith training (delegated to unified_cli)
+version: v4
+mode: pretrain
+extra_args:
+  - --csv
+  - models/PolySmith/data/PI1M_v2_psmiles.csv
+  - --batch-size
+  - "256"
+  - --epochs
+  - "10"
+  - --output
+  - models/PolySmith/checkpoints/pretrain_modelv4.pt
