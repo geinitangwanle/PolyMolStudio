@@ -1,4 +1,6 @@
 *.pt
+*.npz
+*.pyc
 data/
     *.csv
     *.tsv
