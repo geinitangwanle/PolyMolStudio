@@ -1,7 +1,0 @@
-PSMILES_Tg_only.csv 
-*.pt
-data/
-    *.csv
-    *.tsv
-    *.parquet
-
