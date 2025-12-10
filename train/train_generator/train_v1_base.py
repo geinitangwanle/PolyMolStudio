@@ -8,7 +8,7 @@ from contextlib import nullcontext
 from transformers import AutoModel
 
 SCRIPT_ROOT = Path(__file__).resolve().parent
-REPO_ROOT = SCRIPT_ROOT.parent.parent.parent  # .../PolyMolStudio
+REPO_ROOT = SCRIPT_ROOT.parent.parent  # .../PolyMolStudio
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 

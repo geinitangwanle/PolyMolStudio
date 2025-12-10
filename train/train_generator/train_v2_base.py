@@ -9,7 +9,7 @@ import torch.distributed as dist
 import torch.multiprocessing as mp
 
 SCRIPT_ROOT = Path(__file__).resolve().parent
-REPO_ROOT = SCRIPT_ROOT.parent.parent.parent  # .../PolyMolStudio
+REPO_ROOT = SCRIPT_ROOT.parent.parent  # .../PolyMolStudio
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
