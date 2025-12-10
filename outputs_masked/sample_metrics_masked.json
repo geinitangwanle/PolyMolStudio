@@ -1,0 +1,10 @@
+{
+  "num_samples": 100,
+  "num_valid": 58,
+  "num_unique": 100,
+  "num_novel": 100,
+  "validity": 0.58,
+  "uniqueness": 1.0,
+  "novelty": 1.0,
+  "sampling_temperature": 0.7
+}

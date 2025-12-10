@@ -1,0 +1,9 @@
+{
+  "num_samples": 20,
+  "num_valid": 20,
+  "num_unique": 20,
+  "num_novel": 20,
+  "validity": 1.0,
+  "uniqueness": 1.0,
+  "novelty": 1.0
+}

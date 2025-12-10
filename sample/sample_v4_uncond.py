@@ -243,12 +243,20 @@ def main():
     device = prepare_device()
     model, tokenizer = load_model(args, device)
 
-    train_set = set()
-    if args.data_csv is not None:
-        df = pd.read_csv(args.data_csv)
-        if args.data_col not in df.columns:
-            raise ValueError(f"Column '{args.data_col}' not found in {args.data_csv}")
-        train_set = set(df[args.data_col].astype(str))
+    # data_csv 为空字符串或目录时视作不提供，跳过新奇度统计
+    data_csv = args.data_csv
+    if data_csv is not None and str(data_csv).strip() != "":
+        data_csv = Path(data_csv)
+        if data_csv.is_file():
+            df = pd.read_csv(data_csv)
+            if args.data_col not in df.columns:
+                raise ValueError(f"Column '{args.data_col}' not found in {data_csv}")
+            train_set = set(df[args.data_col].astype(str))
+        else:
+            print(f"[warn] data-csv '{data_csv}' is not a file; skip novelty metrics.")
+            train_set = set()
+    else:
+        train_set = set()
 
     samples = sample_smiles(
         model=model,
