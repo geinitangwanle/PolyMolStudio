@@ -56,3 +56,11 @@ python design/generate_and_score.py \
 - torch_sparse 在 MPS 上有限，预测器默认可用 `--predict-device cpu`；如有 CUDA 可设为 `auto/cuda`。
 - 检查 `checkpoints/` 路径是否存在，确保 polyBERT 路径正确。
 - 支持 PolyBERT 本地目录或 HF 名称。
+
+## 参考文献与代码
+1. polyBERT
+Kuenneth, C.; Ramprasad, R. polyBERT: a chemical language model to enable fully machine-driven ultrafast polymer informatics. Nat. Commun. 14, 4099 (2023). DOI: 10.1038/s41467-023-39868-6.
+2. PolyMetriX
+Kunchapu, S.; Jablonka, K. M. PolyMetriX: an ecosystem for digital polymer chemistry. npj Comput. Mater. 11, 312 (2025). DOI: 10.1038/s41524-025-01823-y.
+3. PI1M
+Ma, R.; Luo, T. PI1M: A Benchmark Database for Polymer Informatics. J. Chem. Inf. Model. 60(10), 4684-4690 (2020). DOI: 10.1021/acs.jcim.0c00726.
