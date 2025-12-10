@@ -4,14 +4,20 @@ import argparse
 from pathlib import Path
 import datetime
 import random
+import sys
 import numpy as np
 import pandas as pd
 import torch
 from typing import Optional
 from torch_geometric.loader import DataLoader
 
-from model import GeoGATModel
-from data import GraphDataset, convert_csv_to_graphs
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from models.predictor.GeoGATModel import GeoGATModel
+from utils.GraphDataset import GraphDataset
+from utils.PSMILES_to_graph import convert_csv_to_graphs
 
 
 def set_seed(seed: int):

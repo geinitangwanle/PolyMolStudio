@@ -1,4 +1,4 @@
-from data import convert_csv_to_graphs
+from utils.PSMILES_to_graph import convert_csv_to_graphs
 import argparse
 '''
 使用convert_csv_to_graphs将PSMILES转换为图数据，并保存为.npz文件。

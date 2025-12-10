@@ -19,7 +19,7 @@ import sys
 from pathlib import Path
 from typing import List, Optional
 
-ROOT = Path(__file__).resolve().parent
+REPO_ROOT = Path(__file__).resolve().parent.parent  # project root
 
 
 def run_script(script: Path, extra_args: List[str], *, prepend: Optional[List[str]] = None):
@@ -46,18 +46,18 @@ def dispatch_train(args):
     mode = args.mode.lower() if args.mode else None
 
     if version == "v1":
-        run_script(ROOT / "scripts" / "train" / "train_v1_base.py", extra)
+        run_script(REPO_ROOT / "train" / "train_generator" / "train_v1_base.py", extra)
     elif version == "v2":
-        run_script(ROOT / "scripts" / "train" / "train_v2_base.py", extra)
+        run_script(REPO_ROOT / "train" / "train_generator" / "train_v2_base.py", extra)
     elif version == "v3":
-        run_script(ROOT / "scripts" / "train" / "train_v3_tg.py", extra)
+        run_script(REPO_ROOT / "train" / "train_generator" / "train_v3_tg.py", extra)
     elif version == "v4":
         if mode is None:
             raise SystemExit("v4 训练需要指定 --mode pretrain 或 --mode finetune")
         if mode == "pretrain":
-            run_script(ROOT / "scripts" / "train" / "train_v4_pretrain.py", extra)
+            run_script(REPO_ROOT / "train" / "train_generator" / "train_v4_pretrain.py", extra)
         elif mode in {"finetune", "finetune_tg"}:
-            run_script(ROOT / "scripts" / "train" / "train_v4_finetune.py", extra)
+            run_script(REPO_ROOT / "train" / "train_generator" / "train_v4_finetune.py", extra)
         else:
             raise SystemExit(f"未知的 v4 训练模式: {mode}")
     else:
@@ -71,16 +71,16 @@ def dispatch_sample(args):
 
     if version in {"v1", "v2"}:
         prepend = ["--model-version", version]
-        run_script(ROOT / "scripts" / "sample" / "sample_v2_base.py", extra, prepend=prepend)
+        run_script(REPO_ROOT / "sample" / "sample_v2_base.py", extra, prepend=prepend)
     elif version == "v3":
-        run_script(ROOT / "scripts" / "sample" / "sample_v3_tg.py", extra)
+        run_script(REPO_ROOT / "sample" / "sample_v3_tg.py", extra)
     elif version == "v4":
         if mode is None:
             mode = "uncond"
         if mode in {"uncond", "pretrain"}:
-            run_script(ROOT / "scripts" / "sample" / "sample_v4_uncond.py", extra)
+            run_script(REPO_ROOT / "sample" / "sample_v4_uncond.py", extra)
         elif mode in {"tg", "finetune"}:
-            run_script(ROOT / "scripts" / "sample" / "sample_v4_mask.py", extra)
+            run_script(REPO_ROOT / "sample" / "sample_v4_mask.py", extra)
         else:
             raise SystemExit(f"未知的 v4 采样模式: {mode}")
     else:

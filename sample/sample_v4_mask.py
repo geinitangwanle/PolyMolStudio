@@ -10,25 +10,26 @@ from rdkit import Chem
 from transformers import AutoModel
 
 SCRIPT_ROOT = Path(__file__).resolve().parent
-PROJ_ROOT = SCRIPT_ROOT.parent.parent  # .../PolymersGenerator
-sys.path.append(str(PROJ_ROOT / "src"))
+REPO_ROOT = SCRIPT_ROOT.parent  # .../PolyMolStudio
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
-from modelv4 import ConditionalVAESmiles  # noqa: E402
-from modelv4_medium import ConditionalVAESmiles as ConditionalVAESmilesMedium  # noqa: E402
-from modelv4_premium import ConditionalVAESmiles as ConditionalVAESmilesPremium  # noqa: E402
-from dataset_tg import TgStats, compute_tg_stats  # noqa: E402
-from syntax_mask import SyntaxMasker  # noqa: E402
-from tokenizer import PolyBertTokenizer  # noqa: E402
-from train import set_seed  # noqa: E402
+from models.generator.modelv4 import ConditionalVAESmiles  # noqa: E402
+from models.generator.modelv4_medium import ConditionalVAESmiles as ConditionalVAESmilesMedium  # noqa: E402
+from models.generator.modelv4_premium import ConditionalVAESmiles as ConditionalVAESmilesPremium  # noqa: E402
+from models.generator.dataset_tg import TgStats, compute_tg_stats  # noqa: E402
+from models.generator.syntax_mask import SyntaxMasker  # noqa: E402
+from models.generator.tokenizer import PolyBertTokenizer  # noqa: E402
+from models.generator.train import set_seed  # noqa: E402
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Sample SMILES with grammar mask using finetuned modelv4 (ConditionalVAESmiles).")
-    parser.add_argument("--checkpoint", type=Path, default=PROJ_ROOT / "checkpoints/finetune_tg_modelv4.pt",
+    parser.add_argument("--checkpoint", type=Path, default=REPO_ROOT / "checkpoints/finetune_tg_modelv4.pt",
                         help="Path to the finetuned modelv4 checkpoint.")
-    parser.add_argument("--polybert-dir", type=Path, default=PROJ_ROOT / "polybert",
+    parser.add_argument("--polybert-dir", type=Path, default=REPO_ROOT / "polybert",
                         help="Directory containing the polyBERT weights/tokenizer.")
-    parser.add_argument("--data-csv", type=Path, default=PROJ_ROOT / "data/PSMILES_Tg_only.csv",
+    parser.add_argument("--data-csv", type=Path, default=REPO_ROOT / "data/PSMILES_Tg_only.csv",
                         help="CSV file used during training (for novelty metric and Tg stats fallback).")
     parser.add_argument("--data-col", type=str, default="PSMILES",
                         help="Column name in the CSV that holds SMILES strings.")
@@ -48,7 +49,7 @@ def parse_args():
     parser.add_argument("--temperature", type=float, default=1.0, help="Sampling temperature.")
     parser.add_argument("--top-k", type=int, default=None, help="Top-k sampling parameter.")
     parser.add_argument("--top-p", type=float, default=None, help="Top-p nucleus sampling parameter.")
-    parser.add_argument("--output-dir", type=Path, default=PROJ_ROOT / "outputs_masked",
+    parser.add_argument("--output-dir", type=Path, default=REPO_ROOT / "outputs_masked",
                         help="Directory to store sampled SMILES and metrics.")
     parser.add_argument("--samples-file", type=str, default="sampled_smiles_masked.csv",
                         help="Filename for the sampled SMILES CSV.")

@@ -17,12 +17,13 @@ from tqdm import tqdm
 from transformers import AutoModel
 
 SCRIPT_ROOT = Path(__file__).resolve().parent
-PROJ_ROOT = SCRIPT_ROOT.parent.parent  # .../PolymersGenerator
-sys.path.append(str(PROJ_ROOT / "src"))  # 允许从 src 目录直接导入模块
+REPO_ROOT = SCRIPT_ROOT.parent.parent.parent  # .../PolyMolStudio
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
-from dataset import make_loader
-from tokenizer import PolyBertTokenizer
-from train import (
+from models.generator.dataset import make_loader
+from models.generator.tokenizer import PolyBertTokenizer
+from models.generator.train import (
     kld_loss,
     set_seed,
     split_dataframe,
@@ -32,11 +33,11 @@ from train import (
 
 def resolve_model_class(model_size: str):
     if model_size == "base":
-        from modelv4 import ConditionalVAESmiles
+        from models.generator.modelv4 import ConditionalVAESmiles
     elif model_size == "medium":
-        from modelv4_medium import ConditionalVAESmiles
+        from models.generator.modelv4_medium import ConditionalVAESmiles
     elif model_size == "premium":
-        from modelv4_premium import ConditionalVAESmiles
+        from models.generator.modelv4_premium import ConditionalVAESmiles
     else:
         raise ValueError(f"Unknown model size: {model_size}")
     return ConditionalVAESmiles
@@ -134,7 +135,7 @@ def val_loss(model, loader: DataLoader, kl_weight, pad_id, device):
 
 def parse_args(argv: Optional[Iterable[str]] = None):
     parser = argparse.ArgumentParser(description="Pretrain ConditionalVAESmiles on unlabeled pSMILES data.")
-    parser.add_argument("--csv", type=Path, default=Path("data/PI1M_v2_psmiles.csv"), help="输入 CSV 路径（需包含 PSMILES 列）")
+    parser.add_argument("--csv", type=Path, default=REPO_ROOT / "data/PI1M_v2_psmiles.csv", help="输入 CSV 路径（需包含 PSMILES 列）")
     parser.add_argument("--col", type=str, default="PSMILES", help="pSMILES 列名")
     parser.add_argument("--epochs", type=int, default=10)
     parser.add_argument("--batch-size", type=int, default=256)
@@ -143,8 +144,8 @@ def parse_args(argv: Optional[Iterable[str]] = None):
     parser.add_argument("--polybert-lr", type=float, default=1e-5, help="polyBERT 参数学习率")
     parser.add_argument("--polybert-train-last-n", type=int, default=2, help="解冻 polyBERT 最后 N 层；0 表示全冻")
     parser.add_argument("--dropout", type=float, default=0.1)
-    parser.add_argument("--output", type=Path, default=Path("checkpoints/pretrain_modelv4.pt"))
-    parser.add_argument("--polybert-dir", type=str, default="./polybert", help="polyBERT 权重路径或 HF 名称")
+    parser.add_argument("--output", type=Path, default=REPO_ROOT / "checkpoints/pretrain_modelv4.pt")
+    parser.add_argument("--polybert-dir", type=str, default=str(REPO_ROOT / "polybert"), help="polyBERT 权重路径或 HF 名称")
     parser.add_argument("--num-workers", type=int, default=8)
     parser.add_argument("--model-size", type=str, default="base", choices=["base", "medium", "premium"], help="modelv4 容量等级")
     return parser.parse_args(argv)

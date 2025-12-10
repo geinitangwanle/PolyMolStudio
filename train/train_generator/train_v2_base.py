@@ -9,14 +9,15 @@ import torch.distributed as dist
 import torch.multiprocessing as mp
 
 SCRIPT_ROOT = Path(__file__).resolve().parent
-PROJ_ROOT = SCRIPT_ROOT.parent.parent  # .../PolymersGenerator
-sys.path.append(str(PROJ_ROOT / "src"))
+REPO_ROOT = SCRIPT_ROOT.parent.parent.parent  # .../PolyMolStudio
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 # === 导入自定义模块 ===
-from src.tokenizer import PolyBertTokenizer
-from src.dataset import make_loader
-from src.modelv2 import VAESmiles
-from src.train import (
+from models.generator.tokenizer import PolyBertTokenizer
+from models.generator.dataset import make_loader
+from models.generator.modelv2 import VAESmiles
+from models.generator.train import (
     train_one_epoch,
     val_loss,
     set_seed,
@@ -56,10 +57,10 @@ def main(rank, world_size):
     device = torch.device(f"cuda:{rank}" if torch.cuda.is_available() else "cpu")
     print(f"[Rank {rank}] Using device: {device}")
 
-    csv_path = PROJ_ROOT / "data/PSMILES_Tg_only.csv"
+    csv_path = REPO_ROOT / "data/PSMILES_Tg_only.csv"
     if not csv_path.exists():
         csv_path = Path("data/PSMILES_Tg_only.csv")
-    tokenizer = PolyBertTokenizer(str(PROJ_ROOT / "polybert"))
+    tokenizer = PolyBertTokenizer(str(REPO_ROOT / "polybert"))
     polybert_train_last_n = int(os.getenv("POLYBERT_TRAIN_LAST_N", 2))
     polybert_lr = float(os.getenv("POLYBERT_LR", 1e-5))
 
@@ -100,7 +101,7 @@ def main(rank, world_size):
     )
 
     # === 模型加载 ===
-    polybert = AutoModel.from_pretrained(str(PROJ_ROOT / "polybert")).to(device)
+    polybert = AutoModel.from_pretrained(str(REPO_ROOT / "polybert")).to(device)
     trainable_polybert_params = configure_polybert_finetuning(
         polybert,
         train_last_n_layers=polybert_train_last_n,
@@ -160,7 +161,7 @@ def main(rank, world_size):
             # === 自动保存最优模型 ===
             if val_loss_val + 1e-3 < best:
                 best = val_loss_val
-                ckpt_dir = PROJ_ROOT / "checkpoints"
+                ckpt_dir = REPO_ROOT / "checkpoints"
                 ckpt_dir.mkdir(exist_ok=True)
                 torch.save(
                     {

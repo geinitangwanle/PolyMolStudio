@@ -1,4 +1,3 @@
-#============================导入模块================================
 import os, torch, random, sys
 from pathlib import Path
 
@@ -9,17 +8,13 @@ from contextlib import nullcontext
 from transformers import AutoModel
 
 SCRIPT_ROOT = Path(__file__).resolve().parent
-PROJ_ROOT = SCRIPT_ROOT.parent.parent  # .../PolymersGenerator
-sys.path.append(str(PROJ_ROOT / "src"))
+REPO_ROOT = SCRIPT_ROOT.parent.parent.parent  # .../PolyMolStudio
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
-try:
-    from dataset import make_loader
-    from model import VAESmiles
-    from tokenizer import PolyBertTokenizer
-except ImportError:  # When imported as package (e.g., src.train)
-    from .dataset import make_loader
-    from .model import VAESmiles
-    from .tokenizer import PolyBertTokenizer
+from models.generator.dataset import make_loader
+from models.generator.model import VAESmiles
+from models.generator.tokenizer import PolyBertTokenizer
 #====================================================================
 # 设置随机种子，以保证实验可复现
 def set_seed(seed=42):
@@ -191,7 +186,7 @@ def main():
     tokenizer = PolyBertTokenizer(polybert_name)
 
     # 1.5) 加载数据并划分训练/验证/测试
-    data_path = Path("data/molecules.csv")
+    data_path = REPO_ROOT / "data/molecules.csv"
     df = pd.read_csv(data_path)
     train_df, val_df, test_df = split_dataframe(df, train_frac=0.8, val_frac=0.1, seed=42)
 
@@ -281,7 +276,8 @@ def main():
 
         if va < best - 1e-3:
             best, bad = va, 0
-            os.makedirs("checkpoints", exist_ok=True)
+            ckpt_dir = REPO_ROOT / "checkpoints"
+            ckpt_dir.mkdir(exist_ok=True)
             torch.save(
                 {
                     "model": model.state_dict(),
@@ -292,7 +288,7 @@ def main():
                     "tokenizer_name": polybert_name,
                     "use_polybert": True,
                 },
-                "checkpoints/best.pt",
+                ckpt_dir / "best.pt",
             )
         else:
             bad += 1

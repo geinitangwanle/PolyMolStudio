@@ -10,18 +10,19 @@ from rdkit import Chem
 from transformers import AutoModel
 
 SCRIPT_ROOT = Path(__file__).resolve().parent
-PROJ_ROOT = SCRIPT_ROOT.parent.parent  # .../PolymersGenerator
-sys.path.append(str(PROJ_ROOT / "src"))
+REPO_ROOT = SCRIPT_ROOT.parent  # .../PolyMolStudio
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
-from dataset_tg import TgStats
-from modelv3 import ConditionalVAESmiles
-from tokenizer import PolyBertTokenizer
+from models.generator.dataset_tg import TgStats
+from models.generator.modelv3 import ConditionalVAESmiles
+from models.generator.tokenizer import PolyBertTokenizer
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Sample Tg-conditional SMILES and save outputs.")
     parser.add_argument("--checkpoint", type=Path, required=True, help="Path to modelv3 checkpoint.") # 预训练模型检查点路径
-    parser.add_argument("--polybert-dir", type=Path, default=Path("./polybert")) # polyBERT 模型目录
+    parser.add_argument("--polybert-dir", type=Path, default=REPO_ROOT / "polybert") # polyBERT 模型目录
     parser.add_argument("--num-per-target", type=int, default=128, help="Samples per Tg target.") # 每个 Tg 目标的生成样本数量
     parser.add_argument("--target-tg", type=float, nargs="+", required=True, help="Target Tg values (Kelvin).") # 目标 Tg 数值列表（开尔文）
     parser.add_argument("--max-len", type=int, default=256) # 生成序列的最大长度

@@ -6,6 +6,7 @@ import datetime
 import logging
 from pathlib import Path
 import random
+import sys
 import numpy as np
 import pandas as pd
 import torch
@@ -13,8 +14,12 @@ import torch.nn as nn
 from torch_geometric.loader import DataLoader
 from sklearn.model_selection import train_test_split
 
-from data import GraphDataset
-from model import GeoGATModel
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from utils.GraphDataset import GraphDataset
+from models.predictor.GeoGATModel import GeoGATModel
 
 
 

@@ -14,12 +14,13 @@ from tqdm import tqdm
 from transformers import AutoModel
 
 SCRIPT_ROOT = Path(__file__).resolve().parent
-PROJ_ROOT = SCRIPT_ROOT.parent.parent  # .../PolymersGenerator
-sys.path.append(str(PROJ_ROOT / "src"))
+REPO_ROOT = SCRIPT_ROOT.parent.parent.parent  # .../PolyMolStudio
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
-from tokenizer import PolyBertTokenizer  # noqa: E402
-from dataset_tg import make_loader_with_tg, TgStats  # noqa: E402
-from train import (  # noqa: E402
+from models.generator.tokenizer import PolyBertTokenizer  # noqa: E402
+from models.generator.dataset_tg import make_loader_with_tg, TgStats  # noqa: E402
+from models.generator.train import (  # noqa: E402
     kld_loss,
     set_seed,
     split_dataframe,
@@ -118,7 +119,7 @@ def val_loss(model, loader, kl_weight, lambda_tg, pad_id, device):
 
 def parse_args(argv: Optional[Iterable[str]] = None):
     parser = argparse.ArgumentParser(description="Finetune ConditionalVAESmiles with Tg labels starting from pretrained weights.")
-    parser.add_argument("--csv", type=Path, default=Path("data/PSMILES_Tg_only.csv"), help="带 Tg 的数据集 CSV 路径")
+    parser.add_argument("--csv", type=Path, default=REPO_ROOT / "data/PSMILES_Tg_only.csv", help="带 Tg 的数据集 CSV 路径")
     parser.add_argument("--col-smiles", type=str, default="PSMILES", help="SMILES 列名")
     parser.add_argument("--col-tg", type=str, default="Tg", help="Tg 列名")
     parser.add_argument("--epochs", type=int, default=20)
@@ -129,9 +130,9 @@ def parse_args(argv: Optional[Iterable[str]] = None):
     parser.add_argument("--polybert-train-last-n", type=int, default=2, help="解冻 polyBERT 最后 N 层；0 表示全冻")
     parser.add_argument("--dropout", type=float, default=0.1)
     parser.add_argument("--lambda-tg", type=float, default=0.5, help="Tg 回归损失系数")
-    parser.add_argument("--pretrained", type=Path, default=Path("checkpoints/pretrain_modelv4.pt"), help="预训练 checkpoint 路径")
-    parser.add_argument("--polybert-dir", type=str, default="./polybert", help="polyBERT 权重路径或 HF 名称")
-    parser.add_argument("--output", type=Path, default=Path("checkpoints/finetune_tg_modelv4.pt"))
+    parser.add_argument("--pretrained", type=Path, default=REPO_ROOT / "checkpoints/pretrain_modelv4.pt", help="预训练 checkpoint 路径")
+    parser.add_argument("--polybert-dir", type=str, default=str(REPO_ROOT / "polybert"), help="polyBERT 权重路径或 HF 名称")
+    parser.add_argument("--output", type=Path, default=REPO_ROOT / "checkpoints/finetune_tg_modelv4.pt")
     parser.add_argument("--num-workers", type=int, default=8)
     parser.add_argument("--model-size", type=str, default="base", choices=["base", "medium", "premium"], help="modelv4 容量等级")
     return parser.parse_args(argv)
@@ -212,11 +213,11 @@ def main(argv: Optional[Iterable[str]] = None):
         raise ValueError("Tokenizer must provide BOS/CLS and EOS/SEP token ids.")
 
     if args.model_size == "base":
-        from modelv4 import ConditionalVAESmiles as ModelCls
+        from models.generator.modelv4 import ConditionalVAESmiles as ModelCls
     elif args.model_size == "medium":
-        from modelv4_medium import ConditionalVAESmiles as ModelCls
+        from models.generator.modelv4_medium import ConditionalVAESmiles as ModelCls
     elif args.model_size == "premium":
-        from modelv4_premium import ConditionalVAESmiles as ModelCls
+        from models.generator.modelv4_premium import ConditionalVAESmiles as ModelCls
     else:
         raise ValueError(f"Unknown model size: {args.model_size}")
 

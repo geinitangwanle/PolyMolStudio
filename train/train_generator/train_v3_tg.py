@@ -9,13 +9,14 @@ from torch.optim import AdamW
 from transformers import AutoModel
 
 SCRIPT_ROOT = Path(__file__).resolve().parent
-PROJ_ROOT = SCRIPT_ROOT.parent.parent  # .../PolymersGenerator
-sys.path.append(str(PROJ_ROOT / "src"))
+REPO_ROOT = SCRIPT_ROOT.parent.parent.parent  # .../PolyMolStudio
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
-from dataset_tg import make_loader_with_tg
-from modelv3 import ConditionalVAESmiles
-from tokenizer import PolyBertTokenizer
-from train import (
+from models.generator.dataset_tg import make_loader_with_tg
+from models.generator.modelv3 import ConditionalVAESmiles
+from models.generator.tokenizer import PolyBertTokenizer
+from models.generator.train import (
     configure_polybert_finetuning,
     kld_loss,
     set_seed,
@@ -25,10 +26,10 @@ from train import (
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Train Tg-conditional polymer VAE.")
-    parser.add_argument("--csv", type=Path, default=Path("data/PSMILES_Tg_only.csv")) # 输入数据 CSV 文件路径
+    parser.add_argument("--csv", type=Path, default=REPO_ROOT / "data/PSMILES_Tg_only.csv") # 输入数据 CSV 文件路径
     parser.add_argument("--col-smiles", type=str, default="PSMILES") # SMILES 列名
     parser.add_argument("--col-tg", type=str, default="Tg") # Tg 列名
-    parser.add_argument("--polybert-dir", type=Path, default=Path("./polybert")) # polyBERT 模型目录
+    parser.add_argument("--polybert-dir", type=Path, default=REPO_ROOT / "polybert") # polyBERT 模型目录
     parser.add_argument("--epochs", type=int, default=20) # 训练轮数
     parser.add_argument("--batch-size", type=int, default=128) # 批大小
     parser.add_argument("--max-len", type=int, default=256) # 最大序列长度
@@ -39,7 +40,7 @@ def parse_args():
     parser.add_argument("--kl-warmup", type=int, default=10) # KL 散度权重预热轮数
     parser.add_argument("--lambda-tg", type=float, default=0.1) # Tg 回归损失权重
     parser.add_argument("--seed", type=int, default=42)    # 随机种子
-    parser.add_argument("--output", type=Path, default=Path("checkpoints/modelv3_tg.pt")) # 模型检查点保存路径
+    parser.add_argument("--output", type=Path, default=REPO_ROOT / "checkpoints/modelv3_tg.pt") # 模型检查点保存路径
     parser.add_argument("--num-workers", type=int, default=4) # 数据加载器工作线程数
     parser.add_argument("--device", type=str, default=None, help="Override device (cuda/mps/cpu).") # 设备覆盖选项
     parser.add_argument("--emb-dim", type=int, default=256) # 嵌入维度

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import argparse
 import json
 import sys
@@ -10,24 +12,25 @@ from rdkit import Chem
 from transformers import AutoModel
 
 SCRIPT_ROOT = Path(__file__).resolve().parent
-PROJ_ROOT = SCRIPT_ROOT.parent.parent  # .../PolymersGenerator
-sys.path.append(str(PROJ_ROOT / "src"))
+REPO_ROOT = SCRIPT_ROOT.parent  # .../PolyMolStudio
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
-from tokenizer import PolyBertTokenizer  # noqa: E402
-from modelv2 import VAESmiles as VAESmilesV2  # noqa: E402
-from model import VAESmiles as VAESmilesV1  # noqa: E402
-from train import set_seed  # noqa: E402
+from models.generator.tokenizer import PolyBertTokenizer  # noqa: E402
+from models.generator.modelv2 import VAESmiles as VAESmilesV2  # noqa: E402
+from models.generator.model import VAESmiles as VAESmilesV1  # noqa: E402
+from models.generator.train import set_seed  # noqa: E402
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Generate polymer SMILES samples and save the results.")
-    parser.add_argument("--checkpoint", type=Path, default=repo / "checkpoints/modelv2_best.pt",
+    parser.add_argument("--checkpoint", type=Path, default=REPO_ROOT / "checkpoints/modelv2_best.pt",
                         help="Path to the trained model checkpoint.")
-    parser.add_argument("--polybert-dir", type=Path, default=repo / "polybert",
+    parser.add_argument("--polybert-dir", type=Path, default=REPO_ROOT / "polybert",
                         help="Directory containing the polyBERT weights/tokenizer.")
     parser.add_argument("--model-version", type=str, default="v2", choices=["v1", "v2"],
                         help="Model version to load (v1=GRU decoder, v2=Transformer decoder).")
-    parser.add_argument("--data-csv", type=Path, default=repo / "data/PSMILES_Tg_only.csv",
+    parser.add_argument("--data-csv", type=Path, default=REPO_ROOT / "data/PSMILES_Tg_only.csv",
                         help="CSV file used during training (for novelty metric).")
     parser.add_argument("--data-col", type=str, default="PSMILES",
                         help="Column name in the CSV that holds SMILES strings.")
@@ -36,7 +39,7 @@ def parse_args():
     parser.add_argument("--max-len", type=int, default=256,
                         help="Maximum decoding length when sampling.")
     parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility.")
-    parser.add_argument("--output-dir", type=Path, default=repo / "outputs",
+    parser.add_argument("--output-dir", type=Path, default=REPO_ROOT / "outputs",
                         help="Directory to store sampled SMILES and metrics.")
     parser.add_argument("--samples-file", type=str, default="sampled_smiles.csv",
                         help="Filename for the sampled SMILES CSV.")
