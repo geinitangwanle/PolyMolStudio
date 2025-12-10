@@ -1,0 +1,7 @@
+TODO 清单
+🔧 1. 在 polybert/ 目录增加多任务预训练（mask + proxy）
+🔧 2. 在 tg_predictor 加 cross-attention 模块，增强表示能力
+🔧 3. 在 generator 中加入 REINVENT / DPO RL 更新（最简单的是 DPO loss）
+🔧 4. 在 design pipeline 加入“RL 优化多轮循环”
+🔧 5. 加 reward function：Tg + Novelty + Validity + SA
+🔧 6. 增加 config system 支持更复杂训练流程
