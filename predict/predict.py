@@ -84,6 +84,7 @@ def predict_loader(model: torch.nn.Module, loader: DataLoader, device: torch.dev
                    y_mean: Optional[torch.Tensor], y_std: Optional[torch.Tensor]):
     model.eval()
     preds = []
+    fallback_idx = 0  # 如果 batch 没有 mol_id，则用顺序索引填充
     for batch in loader:
         batch = batch.to(device)
         out = model(batch)  # [B, 1]
@@ -92,11 +93,13 @@ def predict_loader(model: torch.nn.Module, loader: DataLoader, device: torch.dev
         # attach ids for alignment back to CSV rows
         mol_ids = batch.mol_id if hasattr(batch, "mol_id") else None
         for i in range(out.size(0)):
+            mid = int(mol_ids[i].item()) if mol_ids is not None else fallback_idx
             preds.append({
-                "mol_id": int(mol_ids[i].item()) if mol_ids is not None else None,
+                "mol_id": mid,
                 "pred_norm": float(out[i].item()),
                 "pred": float(out_denorm[i].item()),
             })
+            fallback_idx += 1
     return preds
 
 
@@ -131,6 +134,13 @@ def main():
         device = torch.device(args.device)
 
     # Step 1) Convert CSV PSMILES -> graph .npz + manifest
+    if args.psmiles_col not in pd.read_csv(args.csv_path, nrows=1).columns:
+        # 如果指定列不存在，尝试使用常见列名 'smiles'
+        if "smiles" in pd.read_csv(args.csv_path, nrows=1).columns:
+            tqdm.write(f"[warn] column '{args.psmiles_col}' not found, falling back to 'smiles'")
+            args.psmiles_col = "smiles"
+        else:
+            raise ValueError(f"PSMILES column '{args.psmiles_col}' not found in CSV")
     save_dir = Path(args.save_dir)
     save_dir.mkdir(parents=True, exist_ok=True)
     _, manifest_df = convert_csv_to_graphs(
@@ -188,10 +198,18 @@ def main():
     in_df = pd.read_csv(args.csv_path)
     out_df = in_df.copy()
     out_df["pred"] = np.nan
+    # 如果存在 sample_id 列，则按 sample_id 对齐，否则按行号对齐
+    use_sample_id = "sample_id" in out_df.columns
     for r in pred_rows:
         mid = r["mol_id"]
-        if mid is not None and 0 <= mid < len(out_df):
-            out_df.at[mid, "pred"] = r["pred"]
+        if use_sample_id:
+            # 找到 sample_id 匹配的行
+            matches = out_df.index[out_df["sample_id"] == mid]
+            if len(matches) > 0:
+                out_df.at[matches[0], "pred"] = r["pred"]
+        else:
+            if mid is not None and 0 <= mid < len(out_df):
+                out_df.at[mid, "pred"] = r["pred"]
 
     out_csv = Path(args.out_csv) if args.out_csv is not None else (save_dir / "predictions.csv")
     out_df.to_csv(out_csv, index=False)

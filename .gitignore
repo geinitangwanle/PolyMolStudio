@@ -6,3 +6,6 @@ data/
     *.tsv
     *.parquet
 demo/
+*.csv
+*.json
+*.png

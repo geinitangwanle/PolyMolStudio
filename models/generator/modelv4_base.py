@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from typing import Optional, Tuple, Literal
+from typing import Optional, Tuple
 from torch.nn import TransformerDecoderLayer
 
 try:
@@ -209,36 +209,6 @@ class ConditionalVAESmiles(nn.Module):
         tg_pred = self.tg_head(z_base) if self.tg_head is not None else None
         return logits, mu, logvar, tg_pred # 返回解码器输出 logits，潜变量均值和对数方差，以及 Tg 预测（如有）
 
-    def log_prob(self, input_ids, conditions, attention_mask=None):
-        """计算整句与逐 token 的 logP，供 RL 使用。
-
-        - input_ids: [B, T]，包含 BOS/EOS。
-        - conditions: [B, cond_dim] 对齐同批样本。
-        返回 (seq_logp [B], token_logp [B, T-1]).
-        """
-
-        if input_ids.size(1) < 2:
-            raise ValueError("input_ids must contain at least BOS + 1 token")
-
-        if attention_mask is None:
-            attention_mask = (input_ids != self.pad_id).long()
-
-        decoder_input_ids = input_ids[:, :-1]
-        targets = input_ids[:, 1:]
-        tgt_mask = attention_mask[:, :-1]
-
-        mu, logvar = self.encode(input_ids, attention_mask)
-        z_base = self.reparameterize(mu, logvar)
-        z_concat, cond_latent = self._prepare_latent(z_base, conditions)
-        gamma, beta = self._compute_film(cond_latent)
-        logits = self.decode_teacher_forcing(z_concat, decoder_input_ids, gamma, beta)
-
-        log_probs = torch.log_softmax(logits, dim=-1)
-        token_logp = log_probs.gather(2, targets.unsqueeze(-1)).squeeze(-1)
-        token_logp = token_logp * tgt_mask
-        seq_logp = token_logp.sum(dim=1)
-        return seq_logp, token_logp
-
     @torch.no_grad()
     def sample(
         self,
@@ -293,86 +263,6 @@ class ConditionalVAESmiles(nn.Module):
                 break
 
         return cur
-
-    @torch.no_grad()
-    def sample_with_logprob(
-        self,
-        num_samples: int,
-        conditions: torch.Tensor,
-        *,
-        max_len: int = 256,
-        temperature: float = 1.0,
-        top_k: Optional[int] = None,
-        top_p: Optional[float] = None,
-        greedy: bool = False,
-        z_base: Optional[torch.Tensor] = None,
-    ):
-        """采样并返回 logP，方便 REINVENT/DPO。
-
-        返回 (tokens, seq_logp, token_logp, lengths)。
-        """
-
-        device = conditions.device
-        if z_base is None:
-            z_base = torch.randn(num_samples, self.z_dim, device=device)
-        z_concat, cond_latent = self._prepare_latent(z_base, conditions)
-        gamma, beta = self._compute_film(cond_latent)
-
-        B = z_concat.size(0)
-        cur = torch.full((B, 1), self.bos_id, dtype=torch.long, device=device)
-        memory = self.latent_proj(z_concat)
-        finished = torch.zeros(B, dtype=torch.bool, device=device)
-        lengths = torch.ones(B, dtype=torch.long, device=device)
-        token_logp_list = []
-
-        for _ in range(max_len - 1):
-            pos_ids = torch.arange(cur.size(1), device=device).unsqueeze(0)
-            tgt = self.emb(cur) + self.pos_emb(pos_ids)
-            tgt_mask = self._causal_mask(cur.size(1), device=device)
-
-            y = self._run_decoder(
-                tgt=tgt,
-                memory=memory.unsqueeze(1).expand(B, cur.size(1), -1),
-                tgt_mask=tgt_mask,
-                tgt_key_padding_mask=(cur == self.pad_id),
-                gamma=gamma,
-                beta=beta,
-            )
-            logits = self.out(y[:, -1])
-            if temperature != 1.0:
-                logits = logits / temperature
-
-            if greedy:
-                next_tok = logits.argmax(dim=-1)
-                step_logp = torch.log_softmax(logits, dim=-1).gather(
-                    1, next_tok.unsqueeze(1)
-                ).squeeze(1)
-            else:
-                probs = torch.softmax(logits, dim=-1)
-                if top_k is not None:
-                    probs = self._top_k(probs, top_k)
-                elif top_p is not None:
-                    probs = self._top_p(probs, top_p)
-                dist = torch.distributions.Categorical(probs=probs)
-                next_tok = dist.sample()
-                step_logp = dist.log_prob(next_tok)
-
-            step_logp = step_logp.masked_fill(finished, 0.0)
-            token_logp_list.append(step_logp.unsqueeze(1))
-
-            next_tok = torch.where(
-                finished.unsqueeze(1), torch.full_like(next_tok.unsqueeze(1), self.eos_id), next_tok.unsqueeze(1)
-            )
-            finished |= next_tok.squeeze(1) == self.eos_id
-            lengths += (~finished).long()
-            cur = torch.cat([cur, next_tok], dim=1)
-            if finished.all():
-                break
-
-        tokens = cur
-        token_logp = torch.cat(token_logp_list, dim=1) if token_logp_list else torch.zeros((B, 0), device=device)
-        seq_logp = token_logp.sum(dim=1)
-        return tokens, seq_logp, token_logp, lengths
 
     def _top_k(self, probs, k):
         topk_vals, topk_idx = probs.topk(k, dim=-1)

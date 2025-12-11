@@ -79,54 +79,65 @@ def load_model(args, device) -> Tuple[torch.nn.Module, PolyBertTokenizer]:
     set_seed(args.seed)
     ckpt = torch.load(args.checkpoint, map_location=device)
 
-    # 决定 polyBERT 源：优先 checkpoint 里的名字，否则用传入路径
-    polybert_name = ckpt.get("tokenizer_name", str(args.polybert_dir))
+    # 解析 state_dict，兼容预训练/RL 等多种格式
+    state_dict = None
+    if isinstance(ckpt, dict):
+        state_dict = ckpt.get("model_state") or ckpt.get("model") or ckpt.get("state_dict")
+    if state_dict is None:
+        state_dict = ckpt
+
+    # 解析配置
+    config = ckpt.get("config", {}) if isinstance(ckpt, dict) else {}
+    polybert_name = config.get("polybert_name") or (ckpt.get("tokenizer_name") if isinstance(ckpt, dict) else None) or str(args.polybert_dir)
     tokenizer = PolyBertTokenizer(polybert_name)
     polybert = AutoModel.from_pretrained(polybert_name).to(device)
 
-    ckpt_model_size = ckpt.get("model_size")
-    model_size = args.model_size or ckpt_model_size or "base"
+    ckpt_model_size = ckpt.get("model_size") if isinstance(ckpt, dict) else None
+    model_size = args.model_size or ckpt_model_size or config.get("model_size") or "base"
     ModelCls = resolve_model_class(model_size)
 
-    if "model_kwargs" in ckpt:
+    if isinstance(ckpt, dict) and "model_kwargs" in ckpt:
         model_kwargs = ckpt["model_kwargs"].copy()
-        # 以 checkpoint 超参为主，避免手工 override 出现不一致
-        model_kwargs.update(
-            {
-                "vocab_size": tokenizer.vocab_size,
-                "polybert": polybert,
-                "use_polybert": True,
-                "pad_id": tokenizer.pad_id,
-                "bos_id": tokenizer.bos_id,
-                "eos_id": tokenizer.eos_id,
-            }
-        )
-        model = ModelCls(**model_kwargs).to(device)
     else:
-        # 回落到旧的默认配置（base）
-        model = ModelCls(
-            vocab_size=tokenizer.vocab_size,
-            emb_dim=256,
-            encoder_hid_dim=polybert.config.hidden_size,
-            decoder_hid_dim=512,
-            z_dim=128,
-            cond_dim=1,
-            cond_latent_dim=32,
-            pad_id=tokenizer.pad_id,
-            bos_id=tokenizer.bos_id,
-            eos_id=tokenizer.eos_id,
-            drop=0.1,
-            use_polybert=True,
-            polybert=polybert,
-            freeze_polybert=True,
-            polybert_pooling="cls",
-            use_tg_regression=False,
-            max_len=args.max_len,
-        ).to(device)
-    model.load_state_dict(ckpt["model"])
+        model_kwargs = config.copy()
+
+    model_kwargs.update(
+        {
+            "vocab_size": tokenizer.vocab_size,
+            "polybert": polybert,
+            "use_polybert": True,
+            "pad_id": tokenizer.pad_id,
+            "bos_id": tokenizer.bos_id,
+            "eos_id": tokenizer.eos_id,
+        }
+    )
+
+    # 兜底默认值
+    model_kwargs.setdefault("emb_dim", 256)
+    model_kwargs.setdefault("encoder_hid_dim", polybert.config.hidden_size)
+    model_kwargs.setdefault("decoder_hid_dim", model_kwargs.get("encoder_hid_dim", 512))
+    model_kwargs.setdefault("z_dim", 128)
+    model_kwargs.setdefault("cond_dim", 1)
+    model_kwargs.setdefault("cond_latent_dim", 32)
+    model_kwargs.setdefault("drop", 0.1)
+    model_kwargs.setdefault("freeze_polybert", True)
+    model_kwargs.setdefault("polybert_pooling", "cls")
+    model_kwargs.setdefault("use_tg_regression", False)
+    model_kwargs.setdefault("max_len", args.max_len)
+
+    # 过滤掉构造函数不接受的键，避免 TypeError（例如 ckpt 里混入 data 等字段）
+    import inspect
+    allowed = set(inspect.signature(ModelCls.__init__).parameters.keys())
+    # 移除 self
+    allowed.discard("self")
+    model_kwargs = {k: v for k, v in model_kwargs.items() if k in allowed}
+
+    model = ModelCls(**model_kwargs).to(device)
+    missing, unexpected = model.load_state_dict(state_dict, strict=False)
+    if missing or unexpected:
+        print(f"[warn] load_state_dict missing={missing}, unexpected={unexpected}")
     model.eval()
     return model, tokenizer
-
 
 def to_rdkit(smiles: str):
     return Chem.MolFromSmiles(smiles.replace("[*]", "[Xe]"))

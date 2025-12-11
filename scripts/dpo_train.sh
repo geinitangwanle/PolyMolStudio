@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=predict # 作业名
+#SBATCH --job-name=dpo_train # 作业名
 
 #SBATCH --partition=A800 # A800 队列
 
@@ -26,11 +26,10 @@ source /share/home/u23514/apps/miniconda3/etc/profile.d/conda.sh
 conda activate py38forGNN
 
 # 执行代码
-srun python ./predict/predict.py \
-  --ckpt_path checkpoints/best_rmse_35.089K_ep032.pt \
-  --csv_path data/raw/samples_tg_checked.csv \
-  --psmiles_col smiles \
-  --batch_size 32 \
-  --save_dir pred_graphs \
-  --out_csv samples_tg_checked_pred.csv
+srun python ./train/RL/dpo_train.py \
+  --data data/your.csv \
+  --polybert_name ./polyBERT \
+  --epochs 5 --batch_size 32 --sigma 1.0 \
+  --temperature 1.0 --top_k 50 \
+  --ckpt checkpoints/your_pretrained.pt
 
