@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Optional, Sequence, Union
+from typing import Any, Optional, Sequence, Union
 import numpy as np
 import pandas as pd
 import torch
@@ -79,6 +79,9 @@ class GraphDataset(Dataset):
         coord_cols: Optional[Sequence[int]] = (4, 5, 6),
         dtype: torch.dtype = torch.float32,
         standardize_y: bool = False,
+        tokenizer: Optional[Any] = None, # 可选：传入 PolyBERT tokenizer，用于序列编码
+        psmiles_col: str = "psmiles",
+        seq_max_length: int = 256,
     ):
         if isinstance(manifest, (str, Path)):
             manifest = pd.read_csv(manifest)
@@ -93,6 +96,9 @@ class GraphDataset(Dataset):
         self.coord_cols = coord_cols
         self.dtype = dtype
         self.standardize_y = standardize_y
+        self.tokenizer = tokenizer
+        self.psmiles_col = psmiles_col
+        self.seq_max_length = seq_max_length
 
         # 预先计算 y 的均值方差（若启用标准化）
         self._y_mean = None
@@ -125,8 +131,15 @@ class GraphDataset(Dataset):
     # 把 manifest 里的 file_path 解析成可读的真实路径
     def _resolve_path(self, fp: str) -> Path:
         p = Path(fp)
-        if not p.is_absolute() and self.root is not None:
-            p = self.root / p
+        if p.is_absolute():
+            return p
+        if self.root is not None:
+            # 若 manifest 里已经带了 root 前缀，避免重复拼接
+            p_str = p.as_posix()
+            root_str = self.root.as_posix()
+            if p_str.startswith(root_str):
+                return p
+            return self.root / p
         return p
 
     def __len__(self) -> int:
@@ -148,6 +161,24 @@ class GraphDataset(Dataset):
         # 可选：标准化标签（训练常用）
         if self.standardize_y and data.y is not None:
             data.y = (data.y - self._y_mean) / self._y_std
+
+        # 可选：编码 pSMILES 序列（用于 cross-attention）
+        if self.tokenizer is not None:
+            if self.psmiles_col not in row.index:
+                raise KeyError(f"pSMILES column '{self.psmiles_col}' not found in manifest; cannot tokenize.")
+            psmiles = row[self.psmiles_col]
+            if not isinstance(psmiles, str):
+                raise ValueError(f"Invalid pSMILES at index {idx}: {psmiles!r}")
+            base_tokenizer = getattr(self.tokenizer, "tokenizer", self.tokenizer)
+            tokens = base_tokenizer(
+                psmiles,
+                padding="max_length",
+                truncation=True,
+                max_length=self.seq_max_length,
+                return_tensors="pt",
+            )
+            data.seq_input_ids = tokens["input_ids"].squeeze(0)
+            data.seq_attention_mask = tokens["attention_mask"].squeeze(0)
 
         # 附加元信息（可选）
         data.mol_id = row.get("mol_id", idx)

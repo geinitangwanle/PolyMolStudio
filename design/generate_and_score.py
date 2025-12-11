@@ -33,15 +33,15 @@ from utils.PSMILES_to_graph import convert_csv_to_graphs  # noqa: E402
 from predict.predict import set_seed  # noqa: E402
 
 
-def load_predictor(ckpt_path: Path, device: torch.device) -> Tuple[torch.nn.Module, Optional[torch.Tensor], Optional[torch.Tensor]]:
+def load_predictor(ckpt_path: Path, device: torch.device):
     ckpt = torch.load(ckpt_path, map_location=device)
-    model = build_model_from_ckpt(None, ckpt)
+    model, tokenizer, cfg = build_model_from_ckpt(ckpt, device)
     state = ckpt.get("model_state") or ckpt.get("model") or ckpt
     model.load_state_dict(state)
     model.to(device).eval()
     y_mean = torch.tensor(ckpt["y_mean"], device=device) if "y_mean" in ckpt else None
     y_std = torch.tensor(ckpt["y_std"], device=device) if "y_std" in ckpt else None
-    return model, y_mean, y_std
+    return model, tokenizer, cfg, y_mean, y_std
 
 
 def run(args):
@@ -91,11 +91,18 @@ def run(args):
     )
 
     # === Step 3: load predictor and score ===
-    predictor, y_mean, y_std = load_predictor(args.predictor_ckpt, pred_device)
+    predictor, pred_tokenizer, pred_cfg, y_mean, y_std = load_predictor(args.predictor_ckpt, pred_device)
     # Build dataset on the fly using same GraphDataset logic as predict.py
     from utils.GraphDataset import GraphDataset  # localized import to avoid circular deps
 
-    dataset = GraphDataset(manifest_df, root=None, standardize_y=False)
+    dataset = GraphDataset(
+        manifest_df,
+        root=graphs_dir,
+        standardize_y=False,
+        tokenizer=pred_tokenizer if pred_cfg.get("use_polybert", False) else None,
+        psmiles_col="psmiles",
+        seq_max_length=pred_cfg.get("seq_max_length", 256),
+    )
     loader = DataLoader(dataset, batch_size=args.predict_batch_size, num_workers=args.num_workers, shuffle=False)
 
     preds = predict_loader(predictor, loader, pred_device, y_mean, y_std)

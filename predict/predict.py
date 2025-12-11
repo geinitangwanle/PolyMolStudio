@@ -8,8 +8,9 @@ import sys
 import numpy as np
 import pandas as pd
 import torch
-from typing import Optional
+from typing import Optional, Tuple, Dict, Any
 from torch_geometric.loader import DataLoader
+from transformers import AutoModel
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:
@@ -18,6 +19,7 @@ if str(REPO_ROOT) not in sys.path:
 from models.predictor.GeoGATModel import GeoGATModel
 from utils.GraphDataset import GraphDataset
 from utils.PSMILES_to_graph import convert_csv_to_graphs
+from models.generator.tokenizer import PolyBertTokenizer
 
 
 def set_seed(seed: int):
@@ -35,9 +37,21 @@ def denorm(t: torch.Tensor, y_mean: Optional[torch.Tensor], y_std: Optional[torc
     return t * y_std + y_mean
 
 
-def build_model_from_ckpt(args, checkpoint: dict) -> torch.nn.Module:
+def build_model_from_ckpt(checkpoint: dict, device: torch.device) -> Tuple[torch.nn.Module, Optional[Any], Dict[str, Any]]:
     # If checkpoint carries a saved config, prefer it; otherwise use training defaults in this repo
     cfg = checkpoint.get("config", {}) if isinstance(checkpoint, dict) else {}
+    use_polybert = cfg.get("use_polybert", False)
+    tokenizer = None
+    polybert_model = None
+    if use_polybert:
+        tokenizer_name = cfg.get("polybert_name") or checkpoint.get("tokenizer_name") or str(REPO_ROOT / "polybert")
+        tokenizer = PolyBertTokenizer(tokenizer_name)
+        polybert_model = AutoModel.from_pretrained(tokenizer_name)
+        if cfg.get("freeze_polybert", True):
+            for p in polybert_model.parameters():
+                p.requires_grad = False
+            polybert_model.eval()
+
     model = GeoGATModel(
         layers_in_conv=cfg.get("layers_in_conv", 3),
         channels=cfg.get("channels", 64),
@@ -55,8 +69,14 @@ def build_model_from_ckpt(args, checkpoint: dict) -> torch.nn.Module:
         geom_K=cfg.get("geom_K", 16),
         geom_rmax=cfg.get("geom_rmax", 4.0),
         concat_original_edge=cfg.get("concat_original_edge", True),
-    )
-    return model
+        use_polybert=use_polybert,
+        polybert=polybert_model,
+        freeze_polybert=cfg.get("freeze_polybert", True),
+        seq_max_length=cfg.get("seq_max_length", 256),
+        cross_attn_heads=cfg.get("cross_attn_heads", 4),
+        cross_attn_dim=cfg.get("cross_attn_dim", None),
+    ).to(device)
+    return model, tokenizer, cfg
 
 
 @torch.no_grad()
@@ -120,14 +140,23 @@ def main():
         save_dir=str(save_dir),
     )
 
-    # Step 2) Build dataset/loader from manifest
+    # Step 2) Build model/tokenizer and load checkpoint
+    ckpt_path = Path(args.ckpt_path)
+    if not ckpt_path.exists():
+        raise FileNotFoundError(f"Checkpoint not found: {ckpt_path}")
+    checkpoint = torch.load(str(ckpt_path), map_location="cpu")
+    model, tokenizer, cfg = build_model_from_ckpt(checkpoint, device)
+    # Step 3) Build dataset/loader from manifest (after knowing tokenizer config)
     dataset = GraphDataset(
         manifest=manifest_df,
-        root=None,
+        root=save_dir,
         separate_pos=True,
         feature_cols=(0, 1, 2, 3),
         coord_cols=(4, 5, 6),
         standardize_y=False,  # no labels
+        tokenizer=tokenizer,
+        psmiles_col="psmiles",
+        seq_max_length=cfg.get("seq_max_length", 256),
     )
     loader = DataLoader(
         dataset,
@@ -137,13 +166,7 @@ def main():
         pin_memory=(device.type == "cuda"),
     )
 
-    # Step 3) Build model and load checkpoint
-    ckpt_path = Path(args.ckpt_path)
-    if not ckpt_path.exists():
-        raise FileNotFoundError(f"Checkpoint not found: {ckpt_path}")
-    checkpoint = torch.load(str(ckpt_path), map_location="cpu")
-    model = build_model_from_ckpt(args, checkpoint)
-    # tolerate various checkpoint formats
+    # Step 4) Load checkpoint weights (tolerate multiple formats)
     state_dict = None
     if isinstance(checkpoint, dict):
         state_dict = checkpoint.get("model_state") or checkpoint.get("state_dict")
@@ -158,10 +181,10 @@ def main():
     y_mean_t = torch.tensor(y_mean, dtype=torch.float32, device=device) if y_mean is not None else None
     y_std_t = torch.tensor(y_std, dtype=torch.float32, device=device) if y_std is not None else None
 
-    # Step 4) Predict
+    # Step 5) Predict
     pred_rows = predict_loader(model, loader, device, y_mean_t, y_std_t)
 
-    # Step 5) Merge back to input CSV order and save
+    # Step 6) Merge back to input CSV order and save
     in_df = pd.read_csv(args.csv_path)
     out_df = in_df.copy()
     out_df["pred"] = np.nan

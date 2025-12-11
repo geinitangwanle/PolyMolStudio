@@ -227,6 +227,7 @@ def convert_csv_to_graphs(
 
         record: Dict[str, Any] = {
             "mol_id": mol_id,
+            "psmiles": psmiles,
             "num_nodes": len(graph["node_feats"]),
             "num_edges": len(graph["edge_attr"]) // 2,
             "csv_row": row.Index,
@@ -259,4 +260,3 @@ def convert_csv_to_graphs(
         tqdm.write(f"Skipped {len(failed)} molecules due to 3D embed failures.")
         tqdm.write("Example failure: " + str(failed[0]))
     return graphs, manifest
-

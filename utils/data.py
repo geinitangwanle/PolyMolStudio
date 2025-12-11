@@ -1,8 +1,16 @@
-from utils.PSMILES_to_graph import convert_csv_to_graphs
 import argparse
-'''
-使用convert_csv_to_graphs将PSMILES转换为图数据，并保存为.npz文件。
-'''
+import sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from utils.PSMILES_to_graph import convert_csv_to_graphs
+
+"""
+使用 convert_csv_to_graphs 将 PSMILES 转换为图数据，并保存为 .npz 文件。
+"""
 def main():
     parser = argparse.ArgumentParser(description="Convert PSMILES in CSV to graph data and save as .npz files.")
     parser.add_argument("--csv_path", type=str, required=True, help="Path to PSMILES CSV.")

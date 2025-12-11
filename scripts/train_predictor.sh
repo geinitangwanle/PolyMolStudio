@@ -26,19 +26,11 @@ source /share/home/u23514/apps/miniconda3/etc/profile.d/conda.sh
 conda activate py38forGNN
 
 # 执行代码
-srun python train/train_predictor.py --data_path <manifest.csv> \
-    --root_dir <npz根目录> \
-    --batch_size 32 \
-    --test_split 0.1 \
-    --val_split 0.1 \
-    --seed 42 \
-    --epochs 50 \
-    --lr 1e-3 \
-    --weight_decay 1e-4 \
-    --optimizer adamw \
-    --loss mse \
-    --scheduler cosine \
-    --clip_grad_norm 5.0 \
-    --device auto \
-    --log_dir ./logs \
-    --checkpoint_dir ./checkpoints
+srun python ./train/train_predictor.py \
+  --data_path data/processed/graphs_tg/manifest.csv \
+  --root_dir data/processed/graphs_tg \
+  --batch_size 32 --epochs 50 --lr 1e-3 \
+  --use_polybert --polybert-dir ./polybert \
+  --polybert_lr 1e-5 --seq_max_length 256 \
+  --cross_attn_heads 4 --cross_attn_dim 64 \
+  --device auto

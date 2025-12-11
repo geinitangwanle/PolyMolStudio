@@ -5,3 +5,4 @@ data/
     *.csv
     *.tsv
     *.parquet
+demo/

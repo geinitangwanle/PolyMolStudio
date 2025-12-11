@@ -1,12 +1,16 @@
 # ConvModel.py 2025/09/23
+import math
+import warnings
 import torch
 from torch import nn
 import torch.nn.functional as F
 import torch_geometric as pyg
+from torch_geometric.nn import global_mean_pool, GATv2Conv
+from torch_geometric.utils import to_dense_batch
+from typing import Optional
+
 from .GatedConv import GatedGraphConv
-from torch_geometric.nn import global_mean_pool
-from .GeomFeat import GeometryFeaturizer,GemNetEdgeUpdate
-from torch_geometric.nn import GATv2Conv 
+from .GeomFeat import GeometryFeaturizer, GemNetEdgeUpdate
 
 class GeoGATModel(torch.nn.Module):
     def __init__(
@@ -31,6 +35,14 @@ class GeoGATModel(torch.nn.Module):
         concat_original_edge=True, # 得到新的边特征后，是否与原始边特征拼接（是否使用pos信息）
         gem_out=32,
         heads=4, # GAT多头注意力机制的头数
+        # ============== 融合 pSMILES (PolyBERT) 的 cross-attention ==============
+        use_polybert: bool = False,
+        polybert_name: str = "kuelumbus/polyBERT",
+        polybert: Optional[nn.Module] = None,
+        freeze_polybert: bool = True,
+        seq_max_length: int = 256,
+        cross_attn_heads: int = 4,
+        cross_attn_dim: Optional[int] = None,  # 若为 None 则默认等于 channels
     ):
         super(GeoGATModel, self).__init__()
 
@@ -43,6 +55,30 @@ class GeoGATModel(torch.nn.Module):
         self.geom_K = geom_K
         self.geom_rmax = geom_rmax
         self.concat_original_edge = concat_original_edge
+        self.use_polybert = use_polybert
+        self.polybert_name = polybert_name
+        self.freeze_polybert = freeze_polybert
+        self.seq_max_length = seq_max_length
+        self.cross_attn_heads = cross_attn_heads
+        self.cross_attn_dim = cross_attn_dim or channels
+        # 兜底：保证 embed_dim 可整除 heads；若不能整除，优先调小 heads，否则调大 dim
+        if self.cross_attn_dim % self.cross_attn_heads != 0:
+            # 找到 cross_attn_dim 的最大可用因子，确保 heads <= 原 heads
+            factors = [h for h in range(self.cross_attn_heads, 0, -1) if self.cross_attn_dim % h == 0]
+            if factors:
+                new_heads = factors[0]
+                warnings.warn(
+                    f"cross_attn_dim={self.cross_attn_dim} not divisible by heads={self.cross_attn_heads}; "
+                    f"using heads={new_heads} instead."
+                )
+                self.cross_attn_heads = new_heads
+            else:
+                rounded = self.cross_attn_heads * math.ceil(self.cross_attn_dim / self.cross_attn_heads)
+                warnings.warn(
+                    f"cross_attn_dim={self.cross_attn_dim} not divisible by heads={self.cross_attn_heads}; "
+                    f"rounding embed_dim up to {rounded}."
+                )
+                self.cross_attn_dim = rounded
 
         # === 几何特征编码器 ===
         self.geom = GeometryFeaturizer(K=geom_K, r_min=0.0, r_max=geom_rmax,concat_original=concat_original_edge) # 边RBF
@@ -104,6 +140,39 @@ class GeoGATModel(torch.nn.Module):
         # 暂退
         self.dropout = nn.Dropout(p=dropout_p)
 
+        # ============== PolyBERT & Cross-Attention ==============
+        self.polybert_hidden_dim = None
+        if self.use_polybert:
+            if polybert is not None:
+                self.polybert = polybert
+            else:
+                try:
+                    from transformers import AutoModel
+                except ImportError as e:  # pragma: no cover
+                    raise ImportError("transformers is required for use_polybert=True") from e
+                self.polybert = AutoModel.from_pretrained(polybert_name)
+            if self.freeze_polybert:
+                for p in self.polybert.parameters():
+                    p.requires_grad = False
+                self.polybert.eval()
+            self.polybert_hidden_dim = getattr(self.polybert.config, "hidden_size", None)
+            if self.polybert_hidden_dim is None:
+                raise ValueError("polyBERT model must expose hidden_size in config.")
+
+            self.seq_proj = nn.Linear(self.polybert_hidden_dim, self.cross_attn_dim)
+            self.graph_proj = nn.Linear(channels, self.cross_attn_dim)
+            self.cross_attn_seq_to_graph = nn.MultiheadAttention(
+                embed_dim=self.cross_attn_dim, num_heads=cross_attn_heads, batch_first=True
+            )
+            self.cross_attn_graph_to_seq = nn.MultiheadAttention(
+                embed_dim=self.cross_attn_dim, num_heads=cross_attn_heads, batch_first=True
+            )
+
+        # FC 输入维度：原始 3*channels + （可选 cross-attn 拼接）
+        base_fc_in = 3 * self.channels
+        cross_in = 2 * self.cross_attn_dim if self.use_polybert else 0
+        self.fc_in_dim = base_fc_in + cross_in
+
         # 构建多层线性层
         self.fc_layers = nn.ModuleList(
             self.make_fc_layers(num_fc_layers, num_targets=num_targets)
@@ -123,16 +192,53 @@ class GeoGATModel(torch.nn.Module):
     # 用于构建线性层的功能函数
     def make_fc_layers(self, num_fc_layers, num_targets):
         fc_layers = []
-        in_channels = 3 * self.channels
+        in_channels = self.fc_in_dim
         for i in range(num_fc_layers):
             out_channels = num_targets if i == num_fc_layers - 1 else max(in_channels // 2, 8)
             fc_layers.append(nn.Linear(in_channels, out_channels))
             in_channels = out_channels
         return fc_layers
 
+    @staticmethod
+    def _masked_mean(tensor, mask):
+        """
+        tensor: [B, L, D]
+        mask:   [B, L] (bool or 0/1)，True 表示有效位
+        """
+        mask_f = mask.unsqueeze(-1).to(tensor.dtype)
+        denom = mask_f.sum(dim=1).clamp(min=1e-6)
+        return (tensor * mask_f).sum(dim=1) / denom
+
+    def export_config(self):
+        return {
+            "layers_in_conv": self.layers_in_conv,
+            "channels": self.channels,
+            "use_nodetype_coeffs": False,
+            "num_node_types": 0,
+            "num_edge_types": 4,
+            "use_jumping_knowledge": False,
+            "use_bias_for_update": True,
+            "use_dropout": self.use_dropout,
+            "num_convs": self.num_convs,
+            "num_fc_layers": len(self.fc_layers),
+            "neighbors_aggr": "add",
+            "dropout_p": self.dropout.p if hasattr(self, "dropout") else 0.0,
+            "num_targets": self.fc_layers[-1].out_features if self.fc_layers else 1,
+            "geom_K": self.geom_K,
+            "geom_rmax": self.geom_rmax,
+            "concat_original_edge": self.concat_original_edge,
+            "use_polybert": self.use_polybert,
+            "polybert_name": self.polybert_name,
+            "freeze_polybert": self.freeze_polybert,
+            "seq_max_length": self.seq_max_length,
+            "cross_attn_heads": self.cross_attn_heads,
+            "cross_attn_dim": self.cross_attn_dim,
+        }
+
     # 前向传播部分
     def forward(self, data):
         x, edge_index, edge_attr, pos, batch = data.x, data.edge_index, data.edge_attr, data.pos, data.batch
+        batch_size = int(batch.max().item()) + 1
 
         # (1) 距离 RBF（+原始边）
         edge_rbf = self.geom(pos, edge_index, edge_attr)  # [E, 4+K] 或 [E, K]
@@ -156,11 +262,53 @@ class GeoGATModel(torch.nn.Module):
         # block-3: 仍用门控卷积
         x = self.mggc3(x, edge_index, edge_attr_all); x = self.batch_norms[2](x); x = F.relu(x)
 
+        seq_pooled = graph_pooled = None
+        if self.use_polybert and hasattr(data, "seq_input_ids") and hasattr(data, "seq_attention_mask"):
+            # 将 batch 中的节点特征补齐成 [B, N_max, C]
+            graph_dense, graph_mask = to_dense_batch(x, batch)  # mask: True 表示有效节点
+
+            seq_ids = data.seq_input_ids.view(batch_size, self.seq_max_length)
+            seq_mask = data.seq_attention_mask.view(batch_size, self.seq_max_length)
+            seq_out = self.polybert(input_ids=seq_ids, attention_mask=seq_mask)
+            seq_hidden = seq_out.last_hidden_state  # [B, L, H_poly]
+
+            seq_repr = self.seq_proj(seq_hidden)          # [B, L, D]
+            graph_repr = self.graph_proj(graph_dense)     # [B, N, D]
+
+            graph_pad = ~graph_mask  # MultiheadAttention 需要 padding 为 True
+            seq_pad = (seq_mask == 0)
+
+            # seq → graph: 查询序列，键值图节点
+            seq_ctx, _ = self.cross_attn_seq_to_graph(
+                query=seq_repr,
+                key=graph_repr,
+                value=graph_repr,
+                key_padding_mask=graph_pad,
+            )
+            # graph → seq: 查询节点，键值序列
+            graph_ctx, _ = self.cross_attn_graph_to_seq(
+                query=graph_repr,
+                key=seq_repr,
+                value=seq_repr,
+                key_padding_mask=seq_pad,
+            )
+
+            seq_pooled = self._masked_mean(seq_ctx, seq_mask.bool())     # [B, D]
+            graph_pooled = self._masked_mean(graph_ctx, graph_mask)      # [B, D]
+
         x_1 = self.set2set(x, batch)
 
         x_2 = global_mean_pool(x, batch) # 使用全局池化
 
-        x = torch.cat([x_1, x_2], dim=1) # 拼接x1和x2
+        features = [x_1, x_2]
+        if self.use_polybert:
+            if seq_pooled is None or graph_pooled is None:
+                zeros = x.new_zeros((batch_size, self.cross_attn_dim))
+                seq_pooled = zeros if seq_pooled is None else seq_pooled
+                graph_pooled = zeros if graph_pooled is None else graph_pooled
+            features.extend([seq_pooled, graph_pooled])
+
+        x = torch.cat(features, dim=1) # 拼接融合后的特征
 
         x = self.pre_fc_batchnorm(x)
 

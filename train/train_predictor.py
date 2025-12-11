@@ -13,6 +13,8 @@ import torch
 import torch.nn as nn
 from torch_geometric.loader import DataLoader
 from sklearn.model_selection import train_test_split
+from transformers import AutoModel
+from tqdm import tqdm
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:
@@ -20,7 +22,37 @@ if str(REPO_ROOT) not in sys.path:
 
 from utils.GraphDataset import GraphDataset
 from models.predictor.GeoGATModel import GeoGATModel
+from models.generator.tokenizer import PolyBertTokenizer
 
+def configure_polybert_finetuning(polybert, train_last_n_layers: int = 0, unfreeze_embeddings: bool = False):
+    """
+    Freeze all polyBERT params first, then选择性解冻：
+      - unfreeze_embeddings: 解冻 embeddings
+      - train_last_n_layers: 解冻 encoder 的最后 N 层
+    返回需要训练的参数列表。
+    """
+    if polybert is None:
+        return []
+    for p in polybert.parameters():
+        p.requires_grad = False
+
+    trainable = []
+    if unfreeze_embeddings:
+        embeds = getattr(polybert, "embeddings", None)
+        if embeds is not None:
+            for p in embeds.parameters():
+                p.requires_grad = True
+                trainable.append(p)
+
+    encoder = getattr(polybert, "encoder", None)
+    if train_last_n_layers > 0 and encoder is not None and hasattr(encoder, "layer"):
+        layers = encoder.layer[-train_last_n_layers:]
+        for layer in layers:
+            for p in layer.parameters():
+                p.requires_grad = True
+                trainable.append(p)
+
+    return trainable
 
 
 def set_seed(seed):
@@ -47,6 +79,22 @@ def main():
     parser.add_argument("--test_split", type=float, default=0.1)
     parser.add_argument("--val_split", type=float, default=0.1)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--seq_max_length", type=int, default=256, help="Max token length for pSMILES.")
+    parser.add_argument("--use_polybert", action="store_true", help="Enable PolyBERT encoder + cross-attention.")
+    parser.add_argument(
+        "--polybert_dir", "--polybert-dir",
+        dest="polybert_dir",
+        type=str,
+        default=str(REPO_ROOT / "polybert"),
+        help="Path or HF name for PolyBERT."
+    )
+    parser.add_argument("--freeze_polybert", action="store_true", default=True, help="Freeze PolyBERT weights.")
+    parser.add_argument("--no-freeze_polybert", dest="freeze_polybert", action="store_false", help="Unfreeze PolyBERT.")
+    parser.add_argument("--polybert_lr", type=float, default=None, help="Optional LR for PolyBERT params.")
+    parser.add_argument("--polybert_train_last_n", type=int, default=0, help="Unfreeze last N transformer layers of PolyBERT.")
+    parser.add_argument("--unfreeze_polybert_emb", action="store_true", help="Unfreeze PolyBERT embeddings.")
+    parser.add_argument("--cross_attn_heads", type=int, default=4, help="Heads for cross-attention.")
+    parser.add_argument("--cross_attn_dim", type=int, default=None, help="Hidden dim for cross-attention projection.")
 
     # Training arguments
     parser.add_argument("--epochs", type=int, default=50)
@@ -56,6 +104,7 @@ def main():
     parser.add_argument("--loss", type=str, default="mse", choices=["mse", "smoothl1"])
     parser.add_argument("--scheduler", type=str, default="cosine", choices=["cosine", "none"])
     parser.add_argument("--clip_grad_norm", type=float, default=5.0)
+    parser.add_argument("--early_stop_patience", type=int, default=None, help="Stop if val RMSE does not improve for N epochs.")
 
     # Device
     parser.add_argument("--device", type=str, default="auto", choices=["auto", "cpu", "cuda"])
@@ -126,20 +175,48 @@ def main():
 
     logger.info(f"Train: {len(train_df)} | Val: {len(val_df)} | Test: {len(test_df)}")
 
+    # ========== Build tokenizer / PolyBERT ==========
+    tokenizer = None
+    polybert_model = None
+    trainable_polybert_params = []
+    if args.use_polybert:
+        tokenizer = PolyBertTokenizer(str(args.polybert_dir))
+        polybert_model = AutoModel.from_pretrained(str(args.polybert_dir))
+        if args.freeze_polybert:
+            for p in polybert_model.parameters():
+                p.requires_grad = False
+            polybert_model.eval()
+        else:
+            # 默认全解冻；若指定 last_n/emb 则仅部分解冻
+            if args.polybert_train_last_n > 0 or args.unfreeze_polybert_emb:
+                trainable_polybert_params = configure_polybert_finetuning(
+                    polybert_model,
+                    train_last_n_layers=args.polybert_train_last_n,
+                    unfreeze_embeddings=args.unfreeze_polybert_emb,
+                )
+            else:
+                for p in polybert_model.parameters():
+                    p.requires_grad = True
+                trainable_polybert_params = [p for p in polybert_model.parameters() if p.requires_grad]
+            polybert_model.train()
+
     # ========== Build datasets ==========
     root_dir = Path(args.root_dir)
     train_dataset = GraphDataset(
         manifest=train_df, root=root_dir,
-        separate_pos=True, feature_cols=(0,1,2,3), coord_cols=(4,5,6), standardize_y=True
+        separate_pos=True, feature_cols=(0,1,2,3), coord_cols=(4,5,6), standardize_y=True,
+        tokenizer=tokenizer, psmiles_col="psmiles", seq_max_length=args.seq_max_length,
     )
     val_dataset = GraphDataset(
         manifest=val_df, root=root_dir,
-        separate_pos=True, feature_cols=(0,1,2,3), coord_cols=(4,5,6), standardize_y=True
+        separate_pos=True, feature_cols=(0,1,2,3), coord_cols=(4,5,6), standardize_y=True,
+        tokenizer=tokenizer, psmiles_col="psmiles", seq_max_length=args.seq_max_length,
     )
     val_dataset._y_mean, val_dataset._y_std = train_dataset.y_mean, train_dataset.y_std
     test_dataset = GraphDataset(
         manifest=test_df, root=root_dir,
-        separate_pos=True, feature_cols=(0,1,2,3), coord_cols=(4,5,6), standardize_y=True
+        separate_pos=True, feature_cols=(0,1,2,3), coord_cols=(4,5,6), standardize_y=True,
+        tokenizer=tokenizer, psmiles_col="psmiles", seq_max_length=args.seq_max_length,
     )
     test_dataset._y_mean, test_dataset._y_std = train_dataset.y_mean, train_dataset.y_std
 
@@ -155,6 +232,9 @@ def main():
         num_edge_types=4, use_jumping_knowledge=False, use_bias_for_update=True,
         use_dropout=True, num_convs=3, num_fc_layers=3, neighbors_aggr='add',
         dropout_p=0.1, num_targets=1, geom_K=16, geom_rmax=4.0, concat_original_edge=True,
+        use_polybert=args.use_polybert, polybert=polybert_model, freeze_polybert=args.freeze_polybert,
+        polybert_name=str(args.polybert_dir),
+        seq_max_length=args.seq_max_length, cross_attn_heads=args.cross_attn_heads, cross_attn_dim=args.cross_attn_dim,
     ).to(device)
 
     if args.loss == "mse":
@@ -162,10 +242,27 @@ def main():
     else:
         criterion = nn.SmoothL1Loss()
 
+    def build_param_groups():
+        if not args.use_polybert or args.polybert_lr is None:
+            return [{"params": [p for p in model.parameters() if p.requires_grad], "lr": args.lr, "weight_decay": args.weight_decay}]
+        polybert_params, other_params = [], []
+        for name, param in model.named_parameters():
+            if not param.requires_grad:
+                continue
+            if name.startswith("polybert."):
+                polybert_params.append(param)
+            else:
+                other_params.append(param)
+        groups = [{"params": other_params, "lr": args.lr, "weight_decay": args.weight_decay}]
+        if polybert_params:
+            groups.append({"params": polybert_params, "lr": args.polybert_lr, "weight_decay": args.weight_decay})
+        return groups
+
+    param_groups = build_param_groups()
     if args.optimizer == "adamw":
-        optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+        optimizer = torch.optim.AdamW(param_groups)
     else:
-        optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+        optimizer = torch.optim.Adam(param_groups)
 
     if args.scheduler == "cosine":
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs)
@@ -178,11 +275,12 @@ def main():
     best_val_rmse = float("inf")
     best_epoch = -1
     best_ckpt_path = None
+    patience_ctr = 0
 
     for epoch in range(1, args.epochs + 1):
         model.train()
         total_loss, n_tr = 0.0, 0
-        for batch in train_loader:
+        for batch in tqdm(train_loader, desc=f"Epoch {epoch:03d} [train]", leave=False):
             batch = batch.to(device)
             pred = model(batch)
             y = batch.y.view(-1, 1).float().to(device)
@@ -204,7 +302,7 @@ def main():
         model.eval()
         mae, rmse, n_val = 0.0, 0.0, 0
         with torch.no_grad():
-            for batch in val_loader:
+            for batch in tqdm(val_loader, desc=f"Epoch {epoch:03d} [val]", leave=False):
                 batch = batch.to(device)
                 pred_norm = model(batch)
                 y_norm = batch.y.view(-1, 1).float().to(device)
@@ -230,10 +328,18 @@ def main():
                 "optimizer_state": optimizer.state_dict(),
                 "y_mean": float(y_mean.item()),
                 "y_std": float(y_std.item()),
+                "config": model.export_config(),
             }, ckpt_path)
             logger.info(f"Saved checkpoint: {ckpt_path}")
             best_epoch = epoch
             best_ckpt_path = ckpt_path
+            patience_ctr = 0
+        else:
+            patience_ctr += 1
+
+        if args.early_stop_patience is not None and patience_ctr >= args.early_stop_patience:
+            logger.info(f"Early stopping at epoch {epoch}: no val RMSE improvement for {patience_ctr} epochs.")
+            break
 
     # Final test using best validation checkpoint (Scheme B)
     # Reload best checkpoint before evaluating the test set
