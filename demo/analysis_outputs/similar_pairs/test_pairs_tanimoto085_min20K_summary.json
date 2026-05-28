@@ -1,0 +1,12 @@
+{
+  "n_pairs": 42,
+  "mean_similarity": 0.9433890913219882,
+  "median_similarity": 0.9405882352941176,
+  "direction_accuracy": 0.7619047619047619,
+  "delta_mae": 25.581588236490877,
+  "abs_delta_mae": 18.19516158331008,
+  "mean_abs_exp_delta": 39.47857142857143,
+  "mean_abs_pred_delta": 25.17222413562593,
+  "pearson_delta": 0.6959121955141004,
+  "spearman_delta": 0.719124799768068
+}

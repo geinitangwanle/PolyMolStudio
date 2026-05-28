@@ -1,0 +1,22 @@
+{
+  "pool_csv": "outputs_pretrain/samples_pretrain_prediction.csv",
+  "candidate_csv": "demo/paper_candidate_new.csv",
+  "pool_score_col": "pred",
+  "candidate_score_col": "Multimodal Prediction  Tg /K",
+  "n_pool_rows": 512,
+  "n_candidate_rows": 21,
+  "summary_csv": "analysis_outputs/oversampling_triage_demo/pool_vs_triaged_summary.csv",
+  "enrichment_csv": "analysis_outputs/oversampling_triage_demo/high_tg_enrichment.csv",
+  "candidate_pool_percentiles_csv": "analysis_outputs/oversampling_triage_demo/candidate_pool_percentiles.csv",
+  "triage": {
+    "delta_col": "\u0394 /K",
+    "median_delta_k": 3.15,
+    "p90_delta_k": 15.756,
+    "frac_delta_le_5k": 0.5238095238095238,
+    "frac_delta_le_10k": 0.7619047619047619,
+    "frac_delta_le_20k": 0.9047619047619048,
+    "second_score_col": "Unimodal Prediction Tg /K",
+    "median_two_predictor_abs_delta_k": 3.1496581000000106,
+    "p90_two_predictor_abs_delta_k": 15.756469700000025
+  }
+}

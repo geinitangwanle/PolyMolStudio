@@ -1,0 +1,79 @@
+{
+  "source": "demo/paper_candidate.csv",
+  "n": 21,
+  "columns": {
+    "delta": "Δ /K",
+    "md_relative_deviation": "relative deviation %"
+  },
+  "grouping": {
+    "method": "tertile",
+    "low_cut_K": 2.302666666666666,
+    "high_cut_K": 6.915666666666667
+  },
+  "overall_correlation": {
+    "pearson_r": 0.059801468891982304,
+    "pearson_p": 0.7967972732689043,
+    "spearman_rho": 0.4285714285714285,
+    "spearman_p": 0.052571540420705054
+  },
+  "between_group_test_for_md_deviation": {
+    "kruskal_H": 5.395176252319104,
+    "kruskal_p": 0.06736779958689094
+  },
+  "group_summary": {
+    "low_delta": {
+      "delta_K": {
+        "n": 7,
+        "mean": 1.0728571428571427,
+        "std": 0.9371414743021155,
+        "median": 1.733,
+        "min": 0.002,
+        "max": 2.054
+      },
+      "md_relative_deviation_percent": {
+        "n": 7,
+        "mean": 5.0806466195714295,
+        "std": 3.7820898265299063,
+        "median": 5.760672099,
+        "min": 0.824865042,
+        "max": 11.75885385
+      }
+    },
+    "mid_delta": {
+      "delta_K": {
+        "n": 7,
+        "mean": 4.2332857142857145,
+        "std": 1.8130912566006998,
+        "median": 3.15,
+        "min": 2.427,
+        "max": 6.875
+      },
+      "md_relative_deviation_percent": {
+        "n": 7,
+        "mean": 11.943060538857141,
+        "std": 7.327046075015095,
+        "median": 8.361780101,
+        "min": 5.387009928,
+        "max": 25.60430707
+      }
+    },
+    "high_delta": {
+      "delta_K": {
+        "n": 7,
+        "mean": 13.609571428571428,
+        "std": 6.44833851616427,
+        "median": 10.937,
+        "min": 6.997,
+        "max": 22.512
+      },
+      "md_relative_deviation_percent": {
+        "n": 7,
+        "mean": 10.127219431,
+        "std": 6.176626452280955,
+        "median": 8.398980194,
+        "min": 2.076636712,
+        "max": 20.49727217
+      }
+    }
+  }
+}

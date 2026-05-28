@@ -1,0 +1,153 @@
+{
+  "source": "demo/analysis_outputs/uncertainty_delta_relationship_new.csv",
+  "n": 21,
+  "columns": {
+    "delta": "Δ /K",
+    "md_relative_deviation": "relative deviation %",
+    "md_tg": "MD Tg /K",
+    "model_tg": "Multimodal Prediction  Tg /K",
+    "uncertainty": "md_window_uncertainty_k",
+    "residual": "residual_model_minus_md_k"
+  },
+  "excluded_test_ids": [],
+  "excluded_rows": [],
+  "grouping": {
+    "method": "tertile",
+    "low_cut_K": 2.302666666666666,
+    "high_cut_K": 6.915666666666667
+  },
+  "overall_correlation": {
+    "pearson_r": -0.19771881437468575,
+    "pearson_p": 0.3902809632967386,
+    "spearman_rho": 0.07402597402597402,
+    "spearman_p": 0.749805878712243
+  },
+  "between_group_test_for_md_deviation": {
+    "kruskal_H": 2.070500927643792,
+    "kruskal_p": 0.35513742070906973
+  },
+  "residual_vs_md_tg": {
+    "md_tg_column": "MD Tg /K",
+    "model_tg_column": "Multimodal Prediction  Tg /K",
+    "uncertainty_column": "md_window_uncertainty_k",
+    "residual_column": "residual_model_minus_md_k",
+    "full_data": {
+      "n": 21,
+      "residual_k": {
+        "n": 21,
+        "mean": -27.89465680952381,
+        "std": 36.95320665956819,
+        "median": -23.809191999999996,
+        "min": -116.65322300000003,
+        "max": 37.98756700000001
+      },
+      "correlation_residual_vs_md_tg": {
+        "pearson_r": 0.04435843777993148,
+        "pearson_p": 0.8485866793479909,
+        "spearman_rho": 0.051948051948051945,
+        "spearman_p": 0.8230456679720456
+      },
+      "linear_fit_residual_vs_md_tg": {
+        "slope_k_per_k": 0.03816815523989653,
+        "intercept_k": -44.26116177639145
+      }
+    },
+    "robustness_check_excluding_largest_abs_residual": {
+      "excluded_row": {
+        "Test id": 9,
+        "Δ /K": 2.658,
+        "relative deviation %": 25.60430707,
+        "delta_group": "mid_delta",
+        "MD Tg /K": 455.6,
+        "Multimodal Prediction  Tg /K": 338.946777,
+        "Unimodal Prediction Tg /K": 341.6051025,
+        "graph_mean": 351.78179626464845,
+        "graph_model_uncertainty_k": 14.979044175598103,
+        "multi_mean": 361.4715087890625,
+        "multi_model_uncertainty_k": 14.139542978538966,
+        "md_tg_from_curve_k": 455.634091,
+        "md_window_uncertainty_k": 2.017389,
+        "graph_abs_error_k": 103.81820373535156,
+        "multi_abs_error_k": 94.12849121093753,
+        "branch_delta_k": 2.658,
+        "abs_graph_multi_ensemble_delta_k": 9.689712524414062,
+        "residual_model_minus_md_k": -116.65322300000003
+      },
+      "n": 20,
+      "residual_k": {
+        "n": 20,
+        "mean": -23.4567285,
+        "std": 31.655050667681763,
+        "median": -23.776599000000004,
+        "min": -71.87971199999998,
+        "max": 37.98756700000001
+      },
+      "correlation_residual_vs_md_tg": {
+        "pearson_r": 0.14890606576412074,
+        "pearson_p": 0.5309489090888222,
+        "spearman_rho": 0.13383458646616542,
+        "spearman_p": 0.5737559530736434
+      },
+      "linear_fit_residual_vs_md_tg": {
+        "slope_k_per_k": 0.10808749619608127,
+        "intercept_k": -69.65980962397688
+      }
+    }
+  },
+  "group_summary": {
+    "low_delta": {
+      "delta_K": {
+        "n": 7,
+        "mean": 1.0728571428571427,
+        "std": 0.9371414743021155,
+        "median": 1.733,
+        "min": 0.002,
+        "max": 2.054
+      },
+      "md_relative_deviation_percent": {
+        "n": 7,
+        "mean": 6.729248641571429,
+        "std": 3.5157094013812364,
+        "median": 5.762147144,
+        "min": 1.586048081,
+        "max": 12.55198177
+      }
+    },
+    "mid_delta": {
+      "delta_K": {
+        "n": 7,
+        "mean": 4.2332857142857145,
+        "std": 1.8130912566006998,
+        "median": 3.15,
+        "min": 2.427,
+        "max": 6.875
+      },
+      "md_relative_deviation_percent": {
+        "n": 7,
+        "mean": 11.588604983714285,
+        "std": 8.237365712492968,
+        "median": 8.361780101,
+        "min": 0.878359942,
+        "max": 25.60430707
+      }
+    },
+    "high_delta": {
+      "delta_K": {
+        "n": 7,
+        "mean": 13.609571428571428,
+        "std": 6.44833851616427,
+        "median": 10.937,
+        "min": 6.997,
+        "max": 22.512
+      },
+      "md_relative_deviation_percent": {
+        "n": 7,
+        "mean": 7.957235070571429,
+        "std": 5.708787390411137,
+        "median": 6.598190169,
+        "min": 1.747172953,
+        "max": 15.66226187
+      }
+    }
+  }
+}

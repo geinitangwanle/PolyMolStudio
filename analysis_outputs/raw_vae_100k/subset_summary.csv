@@ -1,0 +1,2 @@
+input_csv,subset_csv,n_input_rows_seen,n_subset_rows,limit_rows,rdkit_validity_check,valid_only,unique_only,novel_only
+/Users/tangren/Documents/PolyMolStudio/data/raw/Raw VAE-Generated Polymer-MonomerCandidateLibrary.csv,analysis_outputs/raw_vae_100k/valid_unique_novel_100k.csv,120000,100000,100000,True,True,True,True

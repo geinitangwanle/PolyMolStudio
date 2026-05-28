@@ -1,0 +1,33 @@
+{
+  "input_csv": "data/raw/valid_unique_novel_100k.csv",
+  "scored_csv": "analysis_outputs/raw_vae_100k_dual_scored/dual_predictor_scored.csv",
+  "model1_name": "multimodal",
+  "model1_ckpt": "checkpoints/multi-predictor.pt",
+  "model2_name": "graph",
+  "model2_ckpt": "checkpoints/graph-predictor.pt",
+  "threshold_criterion": "both",
+  "max_delta_k": null,
+  "n_input_rows_seen": 100000,
+  "n_rows_after_filters": 100000,
+  "n_scored": 99949,
+  "thresholds": [
+    {
+      "threshold_k": 500.0,
+      "n_selected": 356,
+      "fraction_of_scored": 0.0035618165264284787,
+      "output_csv": "analysis_outputs/raw_vae_100k_dual_scored/monomers_Tg_ge_500K_both.csv"
+    },
+    {
+      "threshold_k": 600.0,
+      "n_selected": 2,
+      "fraction_of_scored": 2.0010205204654375e-05,
+      "output_csv": "analysis_outputs/raw_vae_100k_dual_scored/monomers_Tg_ge_600K_both.csv"
+    },
+    {
+      "threshold_k": 700.0,
+      "n_selected": 0,
+      "fraction_of_scored": 0.0,
+      "output_csv": "analysis_outputs/raw_vae_100k_dual_scored/monomers_Tg_ge_700K_both.csv"
+    }
+  ]
+}

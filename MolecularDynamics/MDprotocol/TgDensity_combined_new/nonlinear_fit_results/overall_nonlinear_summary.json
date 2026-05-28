@@ -1,0 +1,32 @@
+{
+  "hyperbola": {
+    "n_total": 21,
+    "n_converged": 21,
+    "combined_mean_fit_Tg_K": 446.47319145075704,
+    "combined_mean_fit_Tg_SE_K": 9.03723307552345,
+    "combined_mean_fit_rmse_g_cm3": 0.0014959641527866512,
+    "combined_mean_fit_r2": 0.999662918571248,
+    "mean_Tg_K": 453.8130026651311,
+    "sd_Tg_across_runs_K": 71.2356211905672,
+    "se_mean_Tg_across_runs_K": 15.544886965855927,
+    "mean_curve_fit_Tg_SE_K": 27.88404747655332,
+    "mean_rmse_g_cm3": 0.003705412356498837,
+    "mean_r2": 0.9974710962823707,
+    "mean_aic": -338.72304903936157
+  },
+  "sigmoid": {
+    "n_total": 21,
+    "n_converged": 21,
+    "combined_mean_fit_Tg_K": 448.9037972680303,
+    "combined_mean_fit_Tg_SE_K": 10.251926628920902,
+    "combined_mean_fit_rmse_g_cm3": 0.001282067671770779,
+    "combined_mean_fit_r2": 0.9997524206884316,
+    "mean_Tg_K": 453.66068877920077,
+    "sd_Tg_across_runs_K": 71.88087764822302,
+    "se_mean_Tg_across_runs_K": 15.685693468706729,
+    "mean_curve_fit_Tg_SE_K": 41.46708464548249,
+    "mean_rmse_g_cm3": 0.003678674411550403,
+    "mean_r2": 0.9974964444146491,
+    "mean_aic": -339.0601698076826
+  }
+}

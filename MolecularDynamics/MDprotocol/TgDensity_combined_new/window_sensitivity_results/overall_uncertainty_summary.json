@@ -1,0 +1,22 @@
+{
+  "input_dir": "MolecularDynamics/MDprotocol/TgDensity_combined_new",
+  "n_md_repeats": 21,
+  "baseline_low_window": "last 1/3 of cooling curve",
+  "baseline_high_window": "first 1/3 of cooling curve",
+  "perturbation_deltas_k": [
+    -20.0,
+    -10.0,
+    0.0,
+    10.0,
+    20.0
+  ],
+  "mean_baseline_tg_k": 428.79769582974984,
+  "sigma_bootstrap_k": 42.944496760002615,
+  "sigma_window_k": 9.128490881772981,
+  "sigma_md_k": 43.9039764457445,
+  "min_baseline_tg_k": 321.7654007597079,
+  "max_baseline_tg_k": 499.7008418135783,
+  "n_valid_window_fits": 525,
+  "n_invalid_window_fits": 0,
+  "invalid_windows": []
+}

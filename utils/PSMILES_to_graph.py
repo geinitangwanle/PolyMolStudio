@@ -3,6 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import List, Tuple, Dict, Any
 import math
+import signal
+from contextlib import contextmanager
 import numpy as np
 import pandas as pd
 from rdkit import Chem
@@ -11,6 +13,24 @@ from tqdm.auto import tqdm
 from rdkit import Chem
 from rdkit import RDLogger
 from rdkit.Chem import AllChem
+
+
+@contextmanager
+def _time_limit(seconds: float | None):
+    if seconds is None or seconds <= 0 or not hasattr(signal, "SIGALRM"):
+        yield
+        return
+
+    def _handler(signum, frame):
+        raise TimeoutError(f"Graph construction timed out after {seconds:g} s")
+
+    old_handler = signal.signal(signal.SIGALRM, _handler)
+    signal.setitimer(signal.ITIMER_REAL, seconds)
+    try:
+        yield
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0)
+        signal.signal(signal.SIGALRM, old_handler)
 
 def _optimize_geometry(mol: Chem.Mol, maxIters: int = 200) -> tuple[bool, str]:
     """
@@ -154,6 +174,7 @@ def convert_csv_to_graphs(
     PSMILES_col: str,
     save_dir: str | Path,
     skip_failed: bool = True,
+    graph_timeout_seconds: float | None = None,
 ) -> Tuple[List[Dict[str, Any]], pd.DataFrame]:
     """
     读取 CSV 中的 PSMILES，批量生成图数据，并附带全局标签（若提供）。
@@ -170,6 +191,8 @@ def convert_csv_to_graphs(
         若提供，将把每个图保存为 `.npz` 文件，便于后续快速加载。
     skip_failed : bool, default True
         如果单条分子 3D 嵌入失败，是否跳过继续后续样本；否则直接抛出错误。
+    graph_timeout_seconds : float or None, default None
+        单条分子图构建的超时秒数；None 或 <=0 表示不限制。
 
     Returns
     -------
@@ -212,7 +235,8 @@ def convert_csv_to_graphs(
                 label_value = None
 
         try:
-            graph = graph_from_psmiles(psmiles)
+            with _time_limit(graph_timeout_seconds):
+                graph = graph_from_psmiles(psmiles)
         except Exception as e:
             if skip_failed:
                 failed.append((row.Index, str(e)))

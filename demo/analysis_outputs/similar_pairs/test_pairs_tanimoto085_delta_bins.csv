@@ -1,0 +1,4 @@
+bin,range,n,direction_accuracy,delta_mae
+small,0 <= |experimental delta| < 20 K,67,0.417910447761194,17.267126874781365
+moderate,20 <= |experimental delta| < 50 K,33,0.696969696969697,24.293674168442234
+large,|experimental delta| >= 50 K,9,1.0,30.303939819335938

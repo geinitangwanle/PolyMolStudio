@@ -1,0 +1,8 @@
+﻿Test id,PSMILES,Multimodal Prediction  Tg /K,Unimodal Prediction Tg /K,Δ /K,MD Tg /K,relative deviation %,successful_candidate
+15,[*]c1ccc(OCCOc2ccc(C(C)(C)c3ccc([*])cc3)cc2)cc1,368.313232,368.3110046,0.002,407.1,9.527577499,False
+8,[*]COc1ccc(N(CC)c2ccc(C(=O)c3cccc(OC(=O)SCCC([*])(C)C)c3)cc2)cc1,387.417877,387.3169556,0.101,411.1,5.760672099,True
+21,[*]Cc1ccc(CS(=O)(=O)c2cc(C([*])(C)C)cc(-c3ccccc3)c2)cc1C,475.955994,475.8215027,0.134,499.7,4.751652191,True
+7,[*]/C=C/c1ccccc1CCC(O)CNC(=O)c1ccc(N(C(=O)CCCCCCOc2ccc([*])c(O)c2)cc1)c1ccccc1,389.390808,387.6582642,1.733,413.2,5.762147144,True
+4,[*]Oc1ccc(C(=O)c2ccc(Nc3cccc(-c4ccc(S([*])(=O)=O)cc4)c3)cc2)cc1,456.443909,454.7076416,1.736,463.8,1.586048081,True
+14,[*]C/C=C/c1ccc(C(CBr)(COC(=O)c2ccc(Cl)cc2)OCCCCCCCC)c([*])c1,340.522583,342.2723999,1.75,389.4,12.55198177,False
+6,[*]CC(O)COc1ccc(C(C)(C)c2ccc(OC(=O)c3cc(OCCC)cc(C([*])=O)c3)cc2)c(-c2ccccc2)c1,399.28479,397.2309265,2.054,430.1,7.164661707,True

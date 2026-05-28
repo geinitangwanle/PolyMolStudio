@@ -1,0 +1,22 @@
+﻿Test id,PSMILES,Multimodal Prediction  Tg /K,Unimodal Prediction Tg /K,Δ /K,MD Tg /K,relative deviation %,delta_group
+15,[*]c1ccc(OCCOc2ccc(C(C)(C)c3ccc([*])cc3)cc2)cc1,368.313232,368.3110046,0.002,365.3,0.824865042,low_delta
+8,[*]COc1ccc(N(CC)c2ccc(C(=O)c3cccc(OC(=O)SCCC([*])(C)C)c3)cc2)cc1,387.417877,387.3169556,0.101,411.1,5.760672099,low_delta
+21,[*]Cc1ccc(CS(=O)(=O)c2cc(C([*])(C)C)cc(-c3ccccc3)c2)cc1C,475.955994,475.8215027,0.134,489.2,2.707278414,low_delta
+7,[*]/C=C/c1ccccc1CCC(O)CNC(=O)c1ccc(N(C(=O)CCCCCCOc2ccc([*])c(O)c2)cc1)c1ccccc1,389.390808,387.6582642,1.733,413.2,5.762147144,low_delta
+4,[*]Oc1ccc(C(=O)c2ccc(Nc3cccc(-c4ccc(S([*])(=O)=O)cc4)c3)cc2)cc1,456.443909,454.7076416,1.736,463.8,1.586048081,low_delta
+14,[*]C/C=C/c1ccc(C(CBr)(COC(=O)c2ccc(Cl)cc2)OCCCCCCCC)c([*])c1,340.522583,342.2723999,1.75,385.9,11.75885385,low_delta
+6,[*]CC(O)COc1ccc(C(C)(C)c2ccc(OC(=O)c3cc(OCCC)cc(C([*])=O)c3)cc2)c(-c2ccccc2)c1,399.28479,397.2309265,2.054,430.1,7.164661707,low_delta
+18,[*]Cc1ccc(/C=C/c2ccc(OC(=O)c3cc(CCl)cc([*])c3)cc2OCCCC)cc1,409.76886,412.1954346,2.427,433.1,5.387009928,mid_delta
+9,[*]OP(=O)(O)OCCOC(=O)c1cccc(C(C)(C)c2ccc(OC(=O)c3ccc([*])cc3)cc2)c1CCC,338.946777,341.6051025,2.658,455.6,25.60430707,mid_delta
+1,[*]NNC(=O)c1ccc(Cc2cc(S(=O)(=O)Nc3ccc([*])cc3)ccc2C)c(N=C)c1,492.287567,495.3756409,3.088,454.3,8.361780101,mid_delta
+10,[*]CC([*])(C)COc1ccc(C(=O)OCCCCC(CO)=Nc2ccc(OC(=O)c3ccccc3)cc2)cc1,336.920288,333.7706299,3.15,408.8,17.5830998,mid_delta
+16,[*]CC([*])c1ccc(C(=O)NCCC)cc1/C=N/c1ccc(O)cc1,398.214386,403.6970825,5.483,455.2,12.518808,mid_delta
+5,[*]c1ccc(CCCCCOc2ccc(-n3c([*])c4ccccc4c3)cc2S(=O)(=O)O)c(Cl)c1,443.940918,449.8930054,5.952,415.5,6.844986282,mid_delta
+2,[*]Oc1ccc(NC(=O)c2ccc(CC(=O)Oc3ccc([*])cc3)cc2)c2ccccc12,476.740265,469.8655396,6.875,444.3,7.301432591,mid_delta
+13,[*]CC([*])OC1CC1N(C)c1ccc(C(=O)Oc2ccc(S(=O)(=O)CCC)cc2)s1,350.527527,343.5310059,6.997,440.9,20.49727217,high_delta
+12,[*]CCN(CCCC([*])(C#N)CSC(=O)OCCCC)NC,302.416992,295.2412109,7.176,321.8,6.023308888,high_delta
+20,[*]CC(=O)Oc1ccc(S(=O)(=O)c2ccc(OC(=O)c3ccc(C)cc3)cc2)c(OC([*])=O)c1,443.990143,433.633667,10.356,484.7,8.398980194,high_delta
+11,[*]CC([*])C(=O)OCC(C)(C)CCCCCCOc1cccc(S(=O)(=O)c2ccc(OC)cc2)c1,303.700195,314.6375122,10.937,360.1,15.66226187,high_delta
+3,[*]OS(=O)(=O)c1ccc(Cc2ccc(N3C=Cc4ccc([*])cc4C3=O)cc2)c(-c2ccccc2)c1,459.848114,444.0916443,15.756,469.6,2.076636712,high_delta
+17,[*]/C(=N/c1ccc(C(=O)S[*])c(OCCCCC(F)(F)F)c1)c1ccccc1,395.958893,374.425415,21.533,442.6,10.5379817,high_delta
+19,[*]NC(CO)C(=O)Nc1cccc(CC([*])=O)c1,448.422089,425.909729,22.512,485.8,7.694094483,high_delta

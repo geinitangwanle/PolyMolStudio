@@ -1,0 +1,25 @@
+{
+  "n_models": 10,
+  "ckpt_paths": [
+    "ensemble_checkpoints/ensemble_graph/seed1.pt",
+    "ensemble_checkpoints/ensemble_graph/seed2.pt",
+    "ensemble_checkpoints/ensemble_graph/seed3.pt",
+    "ensemble_checkpoints/ensemble_graph/seed4.pt",
+    "ensemble_checkpoints/ensemble_graph/seed5.pt",
+    "ensemble_checkpoints/ensemble_graph/seed6.pt",
+    "ensemble_checkpoints/ensemble_graph/seed7.pt",
+    "ensemble_checkpoints/ensemble_graph/seed8.pt",
+    "ensemble_checkpoints/ensemble_graph/seed9.pt",
+    "ensemble_checkpoints/ensemble_graph/seed10.pt"
+  ],
+  "mean_ensemble_std": 17.968543908001916,
+  "median_ensemble_std": 18.76411818521205,
+  "max_ensemble_std": 26.405331171909122,
+  "out_csv": "demo/paper_candidate_ensemble_graph_pred.csv",
+  "metrics": {
+    "n": 21,
+    "mae": 40.51391892206101,
+    "rmse": 48.73407871081323,
+    "r2": -0.28820641234285294
+  }
+}

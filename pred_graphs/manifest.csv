@@ -1,0 +1,11 @@
+mol_id,psmiles,num_nodes,num_edges,csv_row,file_path
+0,[*]CC([*])OC(=O)C(CCC)(C)C(=O)OC(F)(F)Cl,19,18,0,pred_graphs/batch_0/0.npz
+1,[*]CC([*])OC1CC1N(C)c1ccc(C(=O)Oc2ccc(S(=O)(=O)CCC)cc2)s1,30,32,1,pred_graphs/batch_0/1.npz
+2,[*]C/C=C/c1ccc(C(CBr)(COC(=O)c2ccc(Cl)cc2)OCCCCCCCC)c([*])c1,34,35,2,pred_graphs/batch_0/2.npz
+3,[*]c1ccc(OCCOc2ccc(C(C)(C)c3ccc([*])cc3)cc2)cc1,27,29,3,pred_graphs/batch_0/3.npz
+4,[*]CC([*])c1ccc(C(=O)NCCC)cc1/C=N/c1ccc(O)cc1,25,26,4,pred_graphs/batch_0/4.npz
+5,[*]/C(=N/c1ccc(C(=O)S[*])c(OCCCCC(F)(F)F)c1)c1ccccc1,28,29,5,pred_graphs/batch_0/5.npz
+6,[*]Cc1ccc(/C=C/c2ccc(OC(=O)c3cc(CCl)cc([*])c3)cc2OCCCC)cc1,33,35,6,pred_graphs/batch_0/6.npz
+7,[*]NC(CO)C(=O)Nc1cccc(CC([*])=O)c1,18,18,7,pred_graphs/batch_0/7.npz
+8,[*]CC(=O)Oc1ccc(S(=O)(=O)c2ccc(OC(=O)c3ccc(C)cc3)cc2)c(OC([*])=O)c1,34,36,8,pred_graphs/batch_0/8.npz
+9,[*]Cc1ccc(CS(=O)(=O)c2cc(C([*])(C)C)cc(-c3ccccc3)c2)cc1C,29,31,9,pred_graphs/batch_0/9.npz

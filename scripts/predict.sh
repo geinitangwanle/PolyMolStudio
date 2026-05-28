@@ -28,9 +28,10 @@ conda activate py38forGNN
 # 执行代码
 srun python ./predict/predict.py \
   --ckpt_path checkpoints/best_rmse_35.089K_ep032.pt \
-  --csv_path data/raw/samples_tg_checked.csv \
-  --psmiles_col smiles \
+  --csv_path data/raw/MD.csv \
+  --psmiles_col PSMILES \
   --batch_size 32 \
   --save_dir pred_graphs \
-  --out_csv samples_tg_checked_pred.csv
+  --out_csv data/raw/MD_pred.csv
+
 

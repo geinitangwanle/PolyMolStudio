@@ -1,0 +1,15 @@
+{
+  "n_models": 2,
+  "ckpt_paths": [
+    "checkpoints/graph-predictor.pt",
+    "checkpoints/multi-predictor.pt"
+  ],
+  "n_input_rows": 1346,
+  "n_graph_rows": 1343,
+  "n_predicted_rows": 1343,
+  "n_unscored_rows": 3,
+  "mean_ensemble_std": 20.110177520328616,
+  "median_ensemble_std": 15.814716785321163,
+  "max_ensemble_std": 115.05635941079221,
+  "out_csv": "demo/finetune_high_Tg/scored_valid_only/cond_samples_valid_skip_slow_scored.csv"
+}

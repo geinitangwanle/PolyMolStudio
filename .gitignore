@@ -5,10 +5,6 @@ data/
     *.csv
     *.tsv
     *.parquet
-demo/
-*.csv
-*.json
-*.png
 outputs_masked/
 outputs_pretrain/
 outputs_pretrain2/

@@ -1,0 +1,4 @@
+ranking_metric,ranking_order,top_k_test_ids,top_k_mean_ranking_metric,top_k_mean_md_relative_deviation_percent,top_k_success_count,top_k_success_rate,enrichment_factor,top_k_mean_md_deviation_percentile_among_random_lower_is_better,prob_random_mean_md_deviation_lower_or_equal_top_k,prob_random_success_count_greater_or_equal_top_k
+Δ /K,ascending,"15,8,21,7,4,14,6",1.0728571428571427,6.729248641571429,2,0.2857142857142857,1.2,15.043859649122806,0.15043859649122807,0.5572755417956656
+graph_model_uncertainty_k,ascending,"8,11,10,15,20,16,4",11.477234742040137,10.389066813000001,1,0.14285714285714285,0.6,79.51840385276918,0.7951840385276918,0.9016167870657035
+multi_model_uncertainty_k,ascending,"8,10,21,6,13,7,14",8.397301151116,9.87282148157143,1,0.14285714285714285,0.6,71.7234262125903,0.717234262125903,0.9016167870657035

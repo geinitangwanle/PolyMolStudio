@@ -144,11 +144,26 @@ def parse_args(argv: Optional[Iterable[str]] = None):
     parser.add_argument("--polybert-lr", type=float, default=1e-5, help="polyBERT 参数学习率")
     parser.add_argument("--polybert-train-last-n", type=int, default=2, help="解冻 polyBERT 最后 N 层；0 表示全冻")
     parser.add_argument("--dropout", type=float, default=0.1)
+    parser.add_argument("--pretrained", type=Path, default=None, help="可选：从已有 v4 生成模型 checkpoint 继续无条件微调")
     parser.add_argument("--output", type=Path, default=REPO_ROOT / "checkpoints/pretrain_modelv4.pt")
     parser.add_argument("--polybert-dir", type=str, default=str(REPO_ROOT / "polybert"), help="polyBERT 权重路径或 HF 名称")
     parser.add_argument("--num-workers", type=int, default=8)
     parser.add_argument("--model-size", type=str, default="base", choices=["base", "medium", "premium"], help="modelv4 容量等级")
     return parser.parse_args(argv)
+
+
+def load_pretrained(model, ckpt_path: Optional[Path], device):
+    if ckpt_path is None:
+        return
+    if not ckpt_path.exists():
+        raise FileNotFoundError(f"Pretrained checkpoint not found: {ckpt_path}")
+    ckpt = torch.load(ckpt_path, map_location=device)
+    state_dict = ckpt.get("model", ckpt)
+    missing, unexpected = model.load_state_dict(state_dict, strict=False)
+    if missing:
+        print(f"Missing keys while loading pretrained checkpoint: {missing}")
+    if unexpected:
+        print(f"Unexpected keys ignored while loading pretrained checkpoint: {unexpected}")
 
 
 def main(argv: Optional[Iterable[str]] = None):
@@ -224,6 +239,7 @@ def main(argv: Optional[Iterable[str]] = None):
         use_tg_regression=False,  # 预训练无需 Tg head
         max_len=args.max_len,
     ).to(device)
+    load_pretrained(model, args.pretrained, device)
 
     opt = torch.optim.AdamW(build_param_groups(model, args.lr, args.polybert_lr, weight_decay=0.01))
     total_steps = len(train_loader) * args.epochs

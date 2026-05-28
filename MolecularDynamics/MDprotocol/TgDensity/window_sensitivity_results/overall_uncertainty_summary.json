@@ -1,0 +1,22 @@
+{
+  "input_dir": "/Users/tangren/Documents/PolyMolStudio/MolecularDynamics/MDprotocol/TgDensity",
+  "n_md_repeats": 21,
+  "baseline_low_window": "last 1/3 of cooling curve",
+  "baseline_high_window": "first 1/3 of cooling curve",
+  "perturbation_deltas_k": [
+    -20.0,
+    -10.0,
+    0.0,
+    10.0,
+    20.0
+  ],
+  "mean_baseline_tg_k": 430.04507560426845,
+  "sigma_bootstrap_k": 44.0025136186057,
+  "sigma_window_k": 11.275231710854076,
+  "sigma_md_k": 45.42413515840482,
+  "min_baseline_tg_k": 321.7654007597079,
+  "max_baseline_tg_k": 489.233539257138,
+  "n_valid_window_fits": 525,
+  "n_invalid_window_fits": 0,
+  "invalid_windows": []
+}

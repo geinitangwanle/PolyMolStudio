@@ -78,7 +78,9 @@ def main():
     parser.add_argument("--batch_size", type=int, default=32)
     parser.add_argument("--test_split", type=float, default=0.1)
     parser.add_argument("--val_split", type=float, default=0.1)
-    parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--seed", type=int, default=42, help="Legacy seed used for both split and model when split/model seeds are not set.")
+    parser.add_argument("--split_seed", type=int, default=None, help="Seed for train/val/test split. Defaults to --seed.")
+    parser.add_argument("--model_seed", type=int, default=None, help="Seed for model initialization, dropout, and dataloader shuffling. Defaults to --seed.")
     parser.add_argument("--seq_max_length", type=int, default=256, help="Max token length for pSMILES.")
     parser.add_argument("--use_polybert", action="store_true", help="Enable PolyBERT encoder + cross-attention.")
     parser.add_argument(
@@ -112,9 +114,14 @@ def main():
     # Logging
     parser.add_argument("--log_dir", type=str, default="./logs")
     parser.add_argument("--checkpoint_dir", type=str, default="./checkpoints")
+    parser.add_argument("--run_name", type=str, default=None, help="Optional prefix for log/checkpoint run directory names.")
 
     args = parser.parse_args()
-    set_seed(args.seed)
+    if args.split_seed is None:
+        args.split_seed = args.seed
+    if args.model_seed is None:
+        args.model_seed = args.seed
+    set_seed(args.model_seed)
 
     # Device selection
     if args.device == "auto":
@@ -124,7 +131,8 @@ def main():
 
     # 只在 logs 下放置单个日志文件；在 checkpoints 下创建与该日志文件名（去掉 .log）相同的子目录保存 .pt
     timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-    log_filename = f"train_{timestamp}.log"
+    run_prefix = f"{args.run_name}_" if args.run_name else ""
+    log_filename = f"{run_prefix}train_{timestamp}_split{args.split_seed}_model{args.model_seed}.log"
 
     # 确保 logs 目录存在，日志文件放到 ./logs/train_<timestamp>.log
     log_dir = Path(args.log_dir)
@@ -157,7 +165,7 @@ def main():
         stratify_labels = None
 
     train_val_df, test_df = train_test_split(
-        manifest, test_size=args.test_split, random_state=args.seed, stratify=stratify_labels
+        manifest, test_size=args.test_split, random_state=args.split_seed, stratify=stratify_labels
     )
 
     if stratify_labels is not None:
@@ -169,7 +177,7 @@ def main():
     train_df, val_df = train_test_split(
         train_val_df,
         test_size=args.val_split / (1 - args.test_split),
-        random_state=args.seed,
+        random_state=args.split_seed,
         stratify=stratify_trainval if stratify_trainval is not None else None,
     )
 
@@ -320,17 +328,17 @@ def main():
 
         if rmse < best_val_rmse:
             best_val_rmse = rmse
-            # 将 checkpoint 保存在 checkpoints/<run_name>/ 下
-            ckpt_path = ckpt_run_dir / f"best_rmse_{best_val_rmse:.3f}K_ep{epoch:03d}.pt"
+            # 只保留当前 run 的最佳权重，避免每次提升都堆积一个 checkpoint。
+            ckpt_path = ckpt_run_dir / "best.pt"
             torch.save({
                 "epoch": epoch,
+                "best_val_rmse": float(best_val_rmse),
                 "model_state": model.state_dict(),
-                "optimizer_state": optimizer.state_dict(),
                 "y_mean": float(y_mean.item()),
                 "y_std": float(y_std.item()),
                 "config": model.export_config(),
             }, ckpt_path)
-            logger.info(f"Saved checkpoint: {ckpt_path}")
+            logger.info(f"Saved best checkpoint: {ckpt_path} | Val RMSE(K) {best_val_rmse:.3f}")
             best_epoch = epoch
             best_ckpt_path = ckpt_path
             patience_ctr = 0
