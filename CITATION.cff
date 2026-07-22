@@ -1,20 +1,38 @@
 cff-version: 1.2.0
-message: "If you use this software, please cite it as below."
+message: "If you use this software, please cite it using the metadata below."
+
 title: "PolyMolStudio"
-version: 1.0.0
+version: "1.0.0"
 type: software
+
 authors:
-  - given-names: Tianyu
-    family-names: Huang
-    affiliation: Tongji University
-    orcid: "https://orcid.org/0009-0006-7165-4492"
+
+* given-names: Tianyu
+  family-names: Huang
+  affiliation: "Guohao College, Tongji University"
+  orcid: "https://orcid.org/0009-0006-7165-4492"
+
 abstract: >
-  Source code accompanying the manuscript entitled
-  "A Multimodal Screening and Validation Framework for Polymer Glass-Transition Temperature Design".
+PolyMolStudio is an open-source computational framework for polymer
+glass-transition temperature design, integrating molecular generation,
+machine-learning-based property prediction, candidate screening, and
+molecular dynamics validation. The software accompanies the manuscript
+entitled "A Multimodal Screening and Validation Framework for Polymer
+Glass-Transition Temperature Design".
+
 license: MIT
+
 repository-code: "https://github.com/geinitangwanle/PolyMolStudio"
+
+date-released: "2026-07-22"
+
+doi: "10.5281/zenodo.XXXXXXX"
+
 keywords:
-  - polymer informatics
-  - glass transition temperature
-  - machine learning
-  - molecular dynamics
+
+* polymer informatics
+* glass transition temperature
+* machine learning
+* molecular generation
+* molecular dynamics
+* materials informatics
