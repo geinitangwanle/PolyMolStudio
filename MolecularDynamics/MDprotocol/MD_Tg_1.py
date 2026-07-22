@@ -42,8 +42,8 @@ T_EQ   = 300.0    # 初始平衡温度 (K)
 P_EQ   = 1.0      # 平衡压力 (atm)
 
 # Tg 冷却 protocol
-T_HIGH = 540.0    # 冷却起始高温 (K)
-T_LOW  = 140.0    # 冷却终止低温 (K)
+T_HIGH = 700.0    # 冷却起始高温 (K)
+T_LOW  = 100.0    # 冷却终止低温 (K)
 DT     = -20.0    # 降温步长 (负号表示降温)
 TEMP_LIST = np.arange(T_HIGH, T_LOW + DT, DT)   
 
