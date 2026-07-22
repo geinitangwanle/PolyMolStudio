@@ -1,5 +1,5 @@
 # PolyMolStudio
-
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21485082.svg)](https://doi.org/10.5281/zenodo.21485082)
 ## Overview 概览
 - Generative models (VAE v1–v4) for polymer pSMILES, with pretrain + Tg finetune workflows.
 - Tg predictor (GeoGAT) for property scoring and design.
