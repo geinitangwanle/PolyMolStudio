@@ -11,7 +11,7 @@ This repository accompanies the manuscript:
 >
 > Tianyu Huang, Wenzhu Bi, Xi Zhang, Xiao Gui, Zheyuan Jiang, and Menghao Yang
 >
-> *Digital Discovery* — accepted subject to minor revisions; article DOI pending.
+> 
 
 ## Overview
 
