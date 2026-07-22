@@ -1,6 +1,6 @@
 # PolyMolStudio
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21485082.svg)](https://doi.org/10.5281/zenodo.21485082)
+[![DOI](zenodo.21485082.svg)](https://doi.org/10.5281/zenodo.21485082)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 **PolyMolStudio** is an open-source framework for polymer glass-transition temperature (T<sub>g</sub>) design. It connects pSMILES-based candidate generation, multimodal T<sub>g</sub> prediction, candidate triage, and selective molecular-dynamics (MD) validation in a single research workflow.
