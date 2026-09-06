@@ -10,26 +10,12 @@ This repository accompanies the manuscript:
 > **A Multimodal Screening and Validation Framework for Polymer Glass-Transition Temperature Design**
 >
 > Tianyu Huang, Wenzhu Bi, Xi Zhang, Xiao Gui, Zheyuan Jiang, and Menghao Yang
->
-> 
 
 ## Overview
 
 The framework is designed for **high-throughput candidate prioritization**, not as a replacement for experimental measurements or physics-based validation.
 
-```mermaid
-flowchart LR
-    A[PI1M pSMILES corpus] --> B[PolyBERT-Transformer VAE]
-    B --> C[Generated pSMILES candidates]
-    C --> D[RDKit validity filtering]
-    D --> E[3D graph construction]
-    E --> F[Graph + PolyBERT Tg predictor]
-    F --> G[Target-based ranking]
-    F --> H[Cross-modal gap Delta]
-    G --> I[Candidate triage]
-    H --> I
-    I --> J[Selective MD validation]
-```
+![workflow](workflow.png)
 
 The main components are:
 
@@ -42,17 +28,17 @@ In the codebase, the paper's **CrossAttentionPolyGeoGAT** corresponds to `GeoGAT
 
 ## Research highlights
 
-| Evaluation | Result reported in the manuscript |
-|---|---:|
-| Raw generated candidate library | 2,000,000 pSMILES |
-| Chemical validity | 90.03% |
-| Uniqueness | 99.76% |
-| Novelty relative to the training set | 99.99% |
-| Multimodal predictor MAE | 24.27 K |
-| Multimodal predictor RMSE | 35.12 K |
-| Multimodal predictor R² | 0.903 |
-| Repeated-split multimodal MAE | 24.35 ± 0.89 K over 10 splits |
-| MD-evaluated generated candidates | 21 |
+| Evaluation                           | Result reported in the manuscript |
+| ------------------------------------ | --------------------------------: |
+| Raw generated candidate library      |                 2,000,000 pSMILES |
+| Chemical validity                    |                            90.03% |
+| Uniqueness                           |                            99.76% |
+| Novelty relative to the training set |                            99.99% |
+| Multimodal predictor MAE             |                           24.27 K |
+| Multimodal predictor RMSE            |                           35.12 K |
+| Multimodal predictor R²             |                             0.903 |
+| Repeated-split multimodal MAE        |    24.35 ± 0.89 K over 10 splits |
+| MD-evaluated generated candidates    |                                21 |
 
 The multimodal model outperformed the graph-only model in all 10 repeated data splits. However, performance depends on structural similarity to the training set: the reported MAE increased from 19.3 K for high-similarity test polymers to 40.0 K for low-similarity polymers.
 
@@ -67,20 +53,20 @@ The multimodal model outperformed the graph-only model in all 10 repeated data s
 
 ## Repository structure
 
-| Path | Description |
-|---|---|
-| `models/generator/` | VAE implementations, including v4 base/medium/premium variants |
-| `models/predictor/GeoGATModel.py` | Geometry-enhanced graph model with optional PolyBERT cross-attention |
-| `train/train_generator/` | Generator pretraining and T<sub>g</sub> fine-tuning scripts |
-| `train/train_predictor.py` | Graph-only or multimodal predictor training |
-| `sample/` | Unconditional and T<sub>g</sub>-conditioned sampling scripts |
-| `predict/` | Single-model and ensemble predictor inference |
-| `design/generate_and_score.py` | End-to-end generation → graph conversion → T<sub>g</sub> scoring pipeline |
-| `utils/PSMILES_to_graph.py` | pSMILES-to-3D-graph conversion with RDKit |
-| `MolecularDynamics/MDprotocol/` | RadonPy workflow, density–temperature data, fitting, and uncertainty analyses |
-| `demo/analysis_outputs/` | Analysis outputs used to inspect prediction, similarity, and triage behavior |
-| `polybert/` | Local PolyBERT tokenizer and model files |
-| `CITATION.cff` | Machine-readable software citation metadata |
+| Path                                | Description                                                                    |
+| ----------------------------------- | ------------------------------------------------------------------------------ |
+| `models/generator/`               | VAE implementations, including v4 base/medium/premium variants                 |
+| `models/predictor/GeoGATModel.py` | Geometry-enhanced graph model with optional PolyBERT cross-attention           |
+| `train/train_generator/`          | Generator pretraining and T<sub>g</sub> fine-tuning scripts                    |
+| `train/train_predictor.py`        | Graph-only or multimodal predictor training                                    |
+| `sample/`                         | Unconditional and T<sub>g</sub>-conditioned sampling scripts                   |
+| `predict/`                        | Single-model and ensemble predictor inference                                  |
+| `design/generate_and_score.py`    | End-to-end generation → graph conversion → T<sub>g</sub> scoring pipeline    |
+| `utils/PSMILES_to_graph.py`       | pSMILES-to-3D-graph conversion with RDKit                                      |
+| `MolecularDynamics/MDprotocol/`   | RadonPy workflow, density–temperature data, fitting, and uncertainty analyses |
+| `demo/analysis_outputs/`          | Analysis outputs used to inspect prediction, similarity, and triage behavior   |
+| `polybert/`                       | Local PolyBERT tokenizer and model files                                       |
+| `CITATION.cff`                    | Machine-readable software citation metadata                                    |
 
 Legacy v1–v3 generator implementations and reinforcement-learning experiments are retained for development history. The publication-facing workflow uses the **v4 generator** and the **GeoGAT multimodal predictor**.
 
@@ -106,17 +92,17 @@ Install a hardware-compatible build of PyTorch and PyTorch Geometric first, foll
 
 The workflow was tested in the following local environment:
 
-| Package | Tested version |
-|---|---:|
-| Python | 3.8 |
-| PyTorch | 2.4.1 |
-| PyTorch Geometric | 2.6.1 |
-| Transformers | 4.46.3 |
-| RDKit | 2022.09.5 |
-| pandas | 2.0.3 |
-| NumPy | 1.24.4 |
-| scikit-learn | 1.3.2 |
-| SciPy | 1.10.1 |
+| Package           | Tested version |
+| ----------------- | -------------: |
+| Python            |            3.8 |
+| PyTorch           |          2.4.1 |
+| PyTorch Geometric |          2.6.1 |
+| Transformers      |         4.46.3 |
+| RDKit             |      2022.09.5 |
+| pandas            |          2.0.3 |
+| NumPy             |         1.24.4 |
+| scikit-learn      |          1.3.2 |
+| SciPy             |         1.10.1 |
 
 > **Environment note:** a locked `environment.yml` or `requirements.txt` is not currently included. PyTorch Geometric binary dependencies must be installed for the selected PyTorch, CUDA, and operating-system combination.
 
@@ -140,13 +126,13 @@ PolyMolStudio/
 └── polybert/
 ```
 
-| Resource | Purpose | Availability |
-|---|---|---|
-| PI1M | Unsupervised VAE pretraining corpus | See the PI1M reference below |
-| PolyMetriX T<sub>g</sub> data | Supervised predictor training and evaluation | See the PolyMetriX reference below |
+| Resource                            | Purpose                                                                           | Availability                                                                              |
+| ----------------------------------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| PI1M                                | Unsupervised VAE pretraining corpus                                               | See the PI1M reference below                                                              |
+| PolyMetriX T<sub>g</sub> data       | Supervised predictor training and evaluation                                      | See the PolyMetriX reference below                                                        |
 | Raw VAE-generated candidate library | 2,000,000 generated candidates with validity, uniqueness, and novelty annotations | [Figshare DOI: 10.6084/m9.figshare.31821124](https://doi.org/10.6084/m9.figshare.31821124) |
-| Source-code archive | Versioned software release | [Zenodo DOI: 10.5281/zenodo.21485082](https://doi.org/10.5281/zenodo.21485082) |
-| MD validation data | Density–temperature data for 21 candidates | `MolecularDynamics/MDprotocol/` |
+| Source-code archive                 | Versioned software release                                                        | [Zenodo DOI: 10.5281/zenodo.21485082](https://doi.org/10.5281/zenodo.21485082)             |
+| MD validation data                  | Density–temperature data for 21 candidates                                       | `MolecularDynamics/MDprotocol/`                                                         |
 
 Training datasets and `.pt` checkpoints are excluded by `.gitignore`; they must be prepared, trained, or supplied locally before running the corresponding commands. The Zenodo record is the archived software release and should not be assumed to contain model checkpoints unless a specific release explicitly lists them.
 
